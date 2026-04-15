@@ -5,6 +5,7 @@ import {
   InputComponent,
   PanelUI,
   PanelDocument,
+  PokeInteractable,
   Follower,
   FollowBehavior,
   UIKitDocument,
@@ -51,6 +52,10 @@ export class MenuSystem extends createSystem({
       maxWidth:  0.45,
       maxHeight: 0.70,
     });
+
+    // Required for IWSDK InputSystem to route finger-tip (TouchPointer) events
+    // to this entity — without it, rays and fingers pass through the panel.
+    this.panelEntity.addComponent(PokeInteractable);
 
     // Keep panel above the left wrist
     this.panelEntity.addComponent(Follower, {
