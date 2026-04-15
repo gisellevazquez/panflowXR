@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Read(//d/Users/Giselle/VR/XRCC26/Resources/Handpan sounds/**)",
+      "Read(//d/Users/Giselle/VR/XRCC26/**)"
+    ]
+  }
+}

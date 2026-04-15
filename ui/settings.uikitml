@@ -1,0 +1,186 @@
+<style>
+  /* ── Root panel ───────────────────────────────────────────────── */
+  .panel {
+    width: 52;
+    padding: 2.5;
+    background-color: #09090b;
+    border-color: #27272a;
+    border-width: 0.15;
+    border-radius: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 2;
+  }
+
+  /* ── Header row ───────────────────────────────────────────────── */
+  .header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .title {
+    font-size: 3.8;
+    font-weight: medium;
+    color: #fafafa;
+  }
+
+  #close-btn {
+    width: 7;
+    height: 7;
+    padding: 0;
+    background-color: #27272a;
+    border-radius: 3.5;
+    border-width: 0;
+    color: #a1a1aa;
+    font-size: 3;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  #close-btn:hover {
+    background-color: #3f3f46;
+    color: #fafafa;
+  }
+
+  /* ── Divider ──────────────────────────────────────────────────── */
+  .divider {
+    height: 0.15;
+    background-color: #27272a;
+  }
+
+  /* ── Section label ────────────────────────────────────────────── */
+  .section-label {
+    font-size: 2.4;
+    color: #a1a1aa;
+    font-weight: medium;
+    margin-bottom: 0.5;
+  }
+
+  /* ── Reverb control ───────────────────────────────────────────── */
+  .reverb-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1;
+  }
+
+  .reverb-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1;
+  }
+
+  .reverb-edge-label {
+    font-size: 2;
+    color: #52525b;
+    width: 10;
+  }
+
+  .reverb-controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5;
+  }
+
+  .reverb-btn {
+    width: 7;
+    height: 7;
+    padding: 0;
+    background-color: #18181b;
+    border-color: #27272a;
+    border-width: 0.12;
+    border-radius: 3.5;
+    color: #fafafa;
+    font-size: 4;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .reverb-btn:hover {
+    background-color: #3f3f46;
+  }
+
+  #reverb-display {
+    font-size: 2.8;
+    color: #fafafa;
+    text-align: center;
+    width: 12;
+  }
+
+  /* ── Ambient sound ────────────────────────────────────────────── */
+  .ambient-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1;
+  }
+
+  .ambient-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8;
+  }
+
+  .ambient-btn {
+    padding: 1.5;
+    background-color: #18181b;
+    border-color: #27272a;
+    border-width: 0.12;
+    border-radius: 2;
+    color: #a1a1aa;
+    font-size: 2.4;
+    cursor: pointer;
+  }
+
+  .ambient-btn:hover {
+    background-color: #27272a;
+    color: #fafafa;
+  }
+
+  .ambient-active {
+    background-color: #1e3a5f;
+    border-color: #3b82f6;
+    color: #93c5fd;
+  }
+</style>
+
+<div class="panel">
+  <!-- ── Header ───────────────────────────────────────────────── -->
+  <div class="header">
+    <span class="title">PanFlow</span>
+    <button id="close-btn">X</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Reverb ───────────────────────────────────────────────── -->
+  <div class="reverb-section">
+    <span class="section-label">Reverb</span>
+    <div class="reverb-row">
+      <span class="reverb-edge-label">Dry</span>
+      <div class="reverb-controls">
+        <button class="reverb-btn" id="reverb-down">-</button>
+        <span id="reverb-display">0%</span>
+        <button class="reverb-btn" id="reverb-up">+</button>
+      </div>
+      <span class="reverb-edge-label">Cathedral</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Ambient sound ────────────────────────────────────────── -->
+  <div class="ambient-section">
+    <span class="section-label">Ambient Sound</span>
+    <div class="ambient-grid">
+      <button class="ambient-btn ambient-active" id="ambient-none">None</button>
+      <button class="ambient-btn" id="ambient-rain">Rain</button>
+      <button class="ambient-btn" id="ambient-forest">Forest</button>
+      <button class="ambient-btn" id="ambient-ocean">Ocean</button>
+      <button class="ambient-btn" id="ambient-wind">Wind</button>
+    </div>
+  </div>
+</div>
