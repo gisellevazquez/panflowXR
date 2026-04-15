@@ -12,6 +12,7 @@ import {
 
 import { reverbManager }  from "./reverb.js";
 import { ambientManager, AmbientType } from "./ambient.js";
+import { handpanLockManager } from "./handpan.js";
 
 // How much reverb changes per button press (0..1 range divided into 10 steps)
 const REVERB_STEP = 0.1;
@@ -34,6 +35,8 @@ export class MenuSystem extends createSystem({
   private panelEntity:    Entity  | null = null;
   private panelVisible              = false;
   private documentWiredUp           = false;
+  private pinchHeldSec              = 0;
+  private readonly TOGGLE_HOLD_SEC  = 1.5;
 
   init() {
     // ─ Create panel entity (hidden at start) ──────────────────────────────
@@ -70,10 +73,23 @@ export class MenuSystem extends createSystem({
     });
   }
 
-  update(_delta: number, _time: number) {
-    // Y button toggles the panel (works in emulator and with controllers)
+  update(delta: number, _time: number) {
+    // Controller / emulator: Y button (instant)
     if (this.input.gamepads.left?.getButtonDown(InputComponent.Y_Button)) {
       this._toggle();
+      return;
+    }
+
+    // Hand tracking: hold left pinch (Trigger) for 1.5 s to toggle menu
+    const pinching = this.input.gamepads.left?.getButtonPressed(InputComponent.Trigger) ?? false;
+    if (pinching) {
+      this.pinchHeldSec += delta;
+      if (this.pinchHeldSec >= this.TOGGLE_HOLD_SEC) {
+        this.pinchHeldSec = 0;
+        this._toggle();
+      }
+    } else {
+      this.pinchHeldSec = 0;
     }
   }
 
@@ -148,5 +164,12 @@ export class MenuSystem extends createSystem({
         setAmbientActive(type);
       });
     }
+
+    // ─ Handpan lock ────────────────────────────────────────────────────────
+    doc.getElementById("lock-btn")?.addEventListener("click", () => {
+      const isLocked = handpanLockManager.toggle();
+      const btn = doc.getElementById("lock-btn") as any;
+      if (btn) btn.text = isLocked ? "Unlock Position" : "Lock Position";
+    });
   }
 }

@@ -165,13 +165,13 @@ export class BubbleSystem extends createSystem({
     const oy = this.headWorldPos.y + r * Math.cos(phi);
     const oz = this.headWorldPos.z + r * Math.sin(phi) * Math.sin(theta);
 
-    const geo  = new SphereGeometry(0.06, 12, 12);
+    const geo  = new SphereGeometry(0.08, 16, 16);
     const mat  = new MeshStandardMaterial({
-      color:       0xaaddff,
+      color:       0x44aaff,
       transparent: true,
-      opacity:     0.28,
+      opacity:     0.6,
       roughness:   0.05,
-      metalness:   0.1,
+      metalness:   0.3,
     });
     const mesh = new Mesh(geo, mat);
     mesh.position.set(ox, oy, oz);

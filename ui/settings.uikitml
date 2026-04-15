@@ -183,4 +183,12 @@
       <button class="ambient-btn" id="ambient-wind">Wind</button>
     </div>
   </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Handpan position lock ─────────────────────────────────── -->
+  <div class="ambient-section">
+    <span class="section-label">Handpan Position</span>
+    <button class="ambient-btn" id="lock-btn">Lock Position</button>
+  </div>
 </div>

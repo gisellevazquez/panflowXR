@@ -13,7 +13,7 @@ import {
   Object3D,
 } from "@iwsdk/core";
 
-import { Handpan, HandpanSystem } from "./handpan.js";
+import { Handpan, HandpanSystem, handpanLockManager } from "./handpan.js";
 import { BubbleSystem }           from "./bubbles.js";
 import { reverbManager }          from "./reverb.js";
 import { ambientManager }         from "./ambient.js";
@@ -128,11 +128,12 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
     handpanMesh = new Mesh(geo, mat);
   }
 
-  // Hip height, ~35 cm in front — user grabs it to reposition
+  // Hip height, ~35 cm in front — start at a manageable size
   handpanMesh.position.set(0, 0.85, -0.35);
+  handpanMesh.scale.setScalar(0.35);
 
   // Explicit world.sceneEntity parent — anchors in world space, not player rig
-  world
+  const handpanEntity = world
     .createTransformEntity(handpanMesh, { parent: world.sceneEntity })
     .addComponent(Handpan)
     .addComponent(RayInteractable)
@@ -142,6 +143,8 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
       translate: true,
       scale:     false,
     });
+
+  handpanLockManager.entity = handpanEntity;
 
   document.addEventListener("handpan-note", (e: Event) => {
     const { index } = (e as CustomEvent).detail;

@@ -7,6 +7,8 @@ import {
   Vector3,
   Group,
   Entity,
+  DistanceGrabbable,
+  MovementMode,
 } from "@iwsdk/core";
 
 // World-space offsets from the handpan centre for each of the 9 tone fields.
@@ -108,3 +110,29 @@ export class HandpanSystem extends createSystem({
     }
   }
 }
+
+/**
+ * Shared singleton for toggling handpan grab lock.
+ * Set `entity` from index.ts after the entity is created.
+ * Call `toggle()` from MenuSystem when the lock button is pressed.
+ */
+export const handpanLockManager = {
+  entity: null as Entity | null,
+  locked: false,
+
+  toggle(): boolean {
+    if (!this.entity) return this.locked;
+    this.locked = !this.locked;
+    if (this.locked) {
+      this.entity.removeComponent(DistanceGrabbable);
+    } else {
+      this.entity.addComponent(DistanceGrabbable, {
+        movementMode: MovementMode.MoveAtSource,
+        rotate:    true,
+        translate: true,
+        scale:     false,
+      });
+    }
+    return this.locked;
+  },
+};
