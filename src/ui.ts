@@ -9,6 +9,7 @@ import {
   Follower,
   FollowBehavior,
   UIKitDocument,
+  VisibilityState,
 } from "@iwsdk/core";
 
 import { reverbManager }  from "./reverb.js";
@@ -53,10 +54,6 @@ export class MenuSystem extends createSystem({
       maxHeight: 0.70,
     });
 
-    // Required for IWSDK InputSystem to route finger-tip (TouchPointer) events
-    // to this entity — without it, rays and fingers pass through the panel.
-    this.panelEntity.addComponent(PokeInteractable);
-
     // Keep panel above the left wrist
     this.panelEntity.addComponent(Follower, {
       target:          this.player.gripSpaces.left,
@@ -65,6 +62,20 @@ export class MenuSystem extends createSystem({
       speed:           8,
       tolerance:       0.06,
     });
+
+    // Add PokeInteractable only once the XR session is active so InputSystem's
+    // multiPointers are fully initialised before we enable touch routing.
+    this.cleanupFuncs.push(
+      this.world.visibilityState.subscribe((state) => {
+        if (
+          state === VisibilityState.Visible &&
+          this.panelEntity &&
+          !this.panelEntity.hasComponent(PokeInteractable)
+        ) {
+          this.panelEntity.addComponent(PokeInteractable);
+        }
+      }),
+    );
 
     // Wire up UI events once PanelUISystem finishes loading the document.
     // Use PanelDocument.data.document[entity.index] — the IWSDK-internal
