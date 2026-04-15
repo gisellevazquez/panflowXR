@@ -162,7 +162,9 @@ export class BubbleSystem extends createSystem({
     const r     = SPAWN_RADIUS_MIN + Math.random() * (SPAWN_RADIUS_MAX - SPAWN_RADIUS_MIN);
 
     const ox = this.headWorldPos.x + r * Math.sin(phi) * Math.cos(theta);
-    const oy = this.headWorldPos.y + r * Math.cos(phi);
+    // Clamp to at least 1 m from the floor (AR floor ≈ y=0 in reference space)
+    // so bubbles never appear below the user's waist.
+    const oy = Math.max(this.headWorldPos.y + r * Math.cos(phi), 1.0);
     const oz = this.headWorldPos.z + r * Math.sin(phi) * Math.sin(theta);
 
     const geo  = new SphereGeometry(0.08, 16, 16);

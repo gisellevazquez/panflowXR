@@ -100,6 +100,26 @@ export class MenuSystem extends createSystem({
     if (this.panelEntity?.object3D) {
       this.panelEntity.object3D.visible = this.panelVisible;
     }
+
+    if (this.panelVisible) {
+      // Freeze panel in place — remove Follower so it stops tracking the wrist.
+      // The panel stays at the position it was in when opened (= wrist position).
+      if (this.panelEntity?.hasComponent(Follower)) {
+        this.panelEntity.removeComponent(Follower);
+      }
+    } else {
+      // Re-attach Follower while hidden so it tracks the wrist again, ready for
+      // next open. The jump to wrist position is invisible because visible=false.
+      if (this.panelEntity && !this.panelEntity.hasComponent(Follower)) {
+        this.panelEntity.addComponent(Follower, {
+          target:         this.player.gripSpaces.left,
+          offsetPosition: [0, 0.20, 0.05] as [number, number, number],
+          behavior:       FollowBehavior.PivotY,
+          speed:          8,
+          tolerance:      0.06,
+        });
+      }
+    }
   }
 
   private _pollForDocument(entity: Entity): void {
