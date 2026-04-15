@@ -83,6 +83,7 @@ export class ReverbManager {
    * @param t 0 = fully dry (room off), 1 = fully wet (cathedral).
    */
   setWet(t: number): void {
+    if (!this.ctx) return;
     const clamped = Math.min(1, Math.max(0, t));
     this._wet = clamped;
     const now = this.ctx.currentTime;

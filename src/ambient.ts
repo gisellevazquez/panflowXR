@@ -39,6 +39,7 @@ export class AmbientSoundManager {
   }
 
   setType(type: AmbientType): void {
+    if (!this.ctx) return;
     if (this.current === type) return;
     this._stopAll();
     this.current = type;

@@ -128,9 +128,10 @@ export class MenuSystem extends createSystem({
     } else {
       // Re-attach Follower while hidden so it tracks the wrist again, ready for
       // next open. The jump to wrist position is invisible because visible=false.
-      if (this.panelEntity && !this.panelEntity.hasComponent(Follower)) {
+      const target = this.player.gripSpaces?.left;
+      if (this.panelEntity && !this.panelEntity.hasComponent(Follower) && target) {
         this.panelEntity.addComponent(Follower, {
-          target:         this.player.gripSpaces.left,
+          target,
           offsetPosition: [0, 0.20, 0.05] as [number, number, number],
           behavior:       FollowBehavior.PivotY,
           speed:          8,
