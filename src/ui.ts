@@ -43,7 +43,8 @@ export class MenuSystem extends createSystem({
     const group = new Group();
     group.visible = false;
 
-    this.panelEntity = this.world.createTransformEntity(group);
+    // Must be parented to sceneEntity so the input system can route events to it
+    this.panelEntity = this.world.createTransformEntity(group, { parent: this.world.sceneEntity });
 
     this.panelEntity.addComponent(PanelUI, {
       config:    "./ui/settings.json",
@@ -60,14 +61,15 @@ export class MenuSystem extends createSystem({
       tolerance:       0.06,
     });
 
-    // Wire up UI events once PanelUISystem finishes loading the document
+    // Wire up UI events once PanelUISystem finishes loading the document.
+    // Use PanelDocument.data.document[entity.index] — the IWSDK-internal
+    // direct data access used in all framework examples.
     this.queries.configuredPanels.subscribe("qualify", (entity: Entity) => {
       if (entity !== this.panelEntity || this.documentWiredUp) return;
-      const doc = entity.getValue(PanelDocument, "document") as UIKitDocument | undefined;
+      const doc = PanelDocument.data.document[entity.index] as UIKitDocument | undefined;
       if (doc) {
         this._wirePanel(doc);
       } else {
-        // PanelUISystem loads async — poll briefly until document is ready
         this._pollForDocument(entity);
       }
     });
@@ -124,7 +126,7 @@ export class MenuSystem extends createSystem({
 
   private _pollForDocument(entity: Entity): void {
     const check = () => {
-      const doc = entity.getValue(PanelDocument, "document") as UIKitDocument | undefined;
+      const doc = PanelDocument.data.document[entity.index] as UIKitDocument | undefined;
       if (doc) {
         this._wirePanel(doc);
       } else {
@@ -137,12 +139,21 @@ export class MenuSystem extends createSystem({
   private _wirePanel(doc: UIKitDocument): void {
     this.documentWiredUp = true;
 
+    // Make panel double-sided so it shows from behind too.
+    // UIKit builds its mesh geometry asynchronously — wait one frame before traversing.
+    setTimeout(() => {
+      this.panelEntity?.object3D?.traverse((obj: any) => {
+        if (obj.isMesh && obj.material) {
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+          mats.forEach((m: any) => { m.side = 2; }); // 2 = THREE.DoubleSide
+        }
+      });
+    }, 200);
+
     // ─ Close button ────────────────────────────────────────────────────────
     doc.getElementById("close-btn")?.addEventListener("click", () => {
-      this.panelVisible = false;
-      if (this.panelEntity?.object3D) {
-        this.panelEntity.object3D.visible = false;
-      }
+      // _toggle handles visibility + re-attaches Follower to track wrist again
+      this._toggle();
     });
 
     // ─ Reverb controls ─────────────────────────────────────────────────────
