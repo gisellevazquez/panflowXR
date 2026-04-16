@@ -110,9 +110,16 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   // Try immediately (works if systems already ran one tick)
   initAudio();
 
-  // Always wire session start so reverb is applied even if first attempt missed
+  // On sessionstart the AudioListener may not exist yet — poll until found.
   world.renderer.xr.addEventListener("sessionstart", () => {
-    if (!reverbManager.audioContext) initAudio();
+    if (reverbManager.audioContext) return;
+    const tryInit = () => {
+      if (!reverbManager.audioContext) {
+        initAudio();
+        if (!reverbManager.audioContext) setTimeout(tryInit, 200);
+      }
+    };
+    setTimeout(tryInit, 200);
   });
 
   // ── Handpan ───────────────────────────────────────────────────────────────

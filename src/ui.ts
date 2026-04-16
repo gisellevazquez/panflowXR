@@ -180,7 +180,7 @@ export class MenuSystem extends createSystem({
 
     const updateDisplay = () => {
       const pct = Math.round(reverbManager.wet * 100);
-      if (display) (display as any).text = `${pct}%`;
+      if (display) (display as any).setProperties({ text: `${pct}%` });
     };
 
     doc.getElementById("reverb-down")?.addEventListener("click", () => {
@@ -201,9 +201,9 @@ export class MenuSystem extends createSystem({
         const btn = doc.getElementById(`ambient-${t}`) as any;
         if (!btn) continue;
         if (t === active) {
-          btn.addClass?.("ambient-active");
+          btn.setProperties({ backgroundColor: 0x1e3a5f, borderColor: 0x3b82f6, color: 0x93c5fd });
         } else {
-          btn.removeClass?.("ambient-active");
+          btn.setProperties({ backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0xa1a1aa });
         }
       }
     };
@@ -219,7 +219,14 @@ export class MenuSystem extends createSystem({
     doc.getElementById("lock-btn")?.addEventListener("click", () => {
       const isLocked = handpanLockManager.toggle();
       const btn = doc.getElementById("lock-btn") as any;
-      if (btn) btn.text = isLocked ? "Unlock Position" : "Lock Position";
+      if (btn) {
+        btn.setProperties({
+          text:            isLocked ? "Unlock Position" : "Lock Position",
+          backgroundColor: isLocked ? 0x1e3a5f : 0x18181b,
+          borderColor:     isLocked ? 0x3b82f6 : 0x27272a,
+          color:           isLocked ? 0x93c5fd : 0xa1a1aa,
+        });
+      }
     });
   }
 }
