@@ -8,7 +8,6 @@ import {
   Group,
   Entity,
   DistanceGrabbable,
-  MovementMode,
 } from "@iwsdk/core";
 
 // World-space offsets from the handpan centre for each of the 9 tone fields.
@@ -127,16 +126,10 @@ export const handpanLockManager = {
   toggle(): boolean {
     if (!this.entity) return this.locked;
     this.locked = !this.locked;
-    if (this.locked) {
-      this.entity.removeComponent(DistanceGrabbable);
-    } else {
-      this.entity.addComponent(DistanceGrabbable, {
-        movementMode: MovementMode.MoveAtSource,
-        rotate:    true,
-        translate: true,
-        scale:     false,
-      });
-    }
+    // Disable/enable movement via field values — avoids GrabSystem edge cases
+    // that occur when removing/re-adding the component mid-grab.
+    this.entity.setValue(DistanceGrabbable, "translate", !this.locked);
+    this.entity.setValue(DistanceGrabbable, "rotate",    !this.locked);
     return this.locked;
   },
 };

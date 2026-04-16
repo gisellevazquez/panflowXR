@@ -92,35 +92,19 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
 }).then((world) => {
 
   // ── Reverb & ambient ───────────────────────────────────────────────────────
-  // AudioSystem creates its AudioListener lazily on the first XR session start.
-  // We hook into that same event so the AudioContext is guaranteed to exist.
+  // AudioContext requires a user gesture — XR sessionstart guarantees one.
   const initAudio = () => {
-    const ok = reverbManager.init(world.player.head);
+    if (reverbManager.audioContext) return;
+    const ok = reverbManager.init();
     if (ok) {
       ambientManager.init(
         reverbManager.audioContext,
         (node) => reverbManager.connectSource(node),
       );
-    } else {
-      // Retry on the next session start (e.g. user exits then re-enters XR)
-      console.warn("[PanFlow] Reverb init deferred — AudioListener not ready yet.");
     }
   };
 
-  // Try immediately (works if systems already ran one tick)
-  initAudio();
-
-  // On sessionstart the AudioListener may not exist yet — poll until found.
-  world.renderer.xr.addEventListener("sessionstart", () => {
-    if (reverbManager.audioContext) return;
-    const tryInit = () => {
-      if (!reverbManager.audioContext) {
-        initAudio();
-        if (!reverbManager.audioContext) setTimeout(tryInit, 200);
-      }
-    };
-    setTimeout(tryInit, 200);
-  });
+  world.renderer.xr.addEventListener("sessionstart", initAudio);
 
   // ── Handpan ───────────────────────────────────────────────────────────────
   const gltf = AssetManager.getGLTF("handpan");
