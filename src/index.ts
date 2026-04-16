@@ -70,6 +70,7 @@ const assets: AssetManifest = {
 
 World.create(document.getElementById("scene-container") as HTMLDivElement, {
   assets,
+  render: { stencil: true }, // required for IWSDK AnimatedHand ghost-hand visuals
   xr: {
     sessionMode: SessionMode.ImmersiveAR,
     offer: "always",

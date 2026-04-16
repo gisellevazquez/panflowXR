@@ -16,6 +16,7 @@ import {
 
 import { reverbManager }  from "./reverb.js";
 import { ambientManager, AmbientType } from "./ambient.js";
+import { bubbleManager } from "./bubbles.js";
 
 const REVERB_STEP      = 0.1;
 const AMBIENT_VOL_STEP = 0.05;
@@ -253,6 +254,19 @@ export class MenuSystem extends createSystem({
         setAmbientActive(type);
       });
     }
+
+    // ─ Bubble toggle ───────────────────────────────────────────────────────
+    const bubbleBtn = doc.getElementById("bubble-toggle") as any;
+    doc.getElementById("bubble-toggle")?.addEventListener("click", () => {
+      bubbleManager.enabled = !bubbleManager.enabled;
+      if (bubbleBtn) {
+        if (bubbleManager.enabled) {
+          bubbleBtn.setProperties({ text: "On",  backgroundColor: 0x1e3a5f, borderColor: 0x3b82f6, color: 0x93c5fd });
+        } else {
+          bubbleBtn.setProperties({ text: "Off", backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0xa1a1aa });
+        }
+      }
+    });
 
   }
 }

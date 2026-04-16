@@ -193,4 +193,12 @@
     </div>
   </div>
 
+  <div class="divider"></div>
+
+  <!-- ── Bubbles ─────────────────────────────────────────────────── -->
+  <div class="ambient-section">
+    <span class="section-label">Bubbles</span>
+    <button class="ambient-btn ambient-active" id="bubble-toggle">On</button>
+  </div>
+
 </div>

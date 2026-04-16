@@ -17,7 +17,8 @@ import {
   VisibilityState,
 } from "@iwsdk/core";
 
-// All 32 singing-bowl recordings used for random bubble pops
+// All singing-bowl recordings. Rename files with "BG" or "SM" in the name
+// to automatically route them to big or small bubbles respectively.
 const BUBBLE_SRCS = [
   "./audio/bubbles/Kasper - Singing Bowls - 04 Bowl 1 Articulation 1 Microphone 1.mp3",
   "./audio/bubbles/Kasper - Singing Bowls - 05 Bowl 1 Articulation 1 Microphone 2.mp3",
@@ -53,27 +54,35 @@ const BUBBLE_SRCS = [
   "./audio/bubbles/Kasper - Singing Bowls - 35 Bowl 4 Articulation 4 Microphone 2.mp3",
 ] as const;
 
-export const BUBBLE_SOUND_COUNT = BUBBLE_SRCS.length;
-
 // ── Tuning ────────────────────────────────────────────────────────────────────
-const POP_DISTANCE     = 0.08;   // metres — index tip within this radius pops bubble
 const FLOAT_FREQ       = 0.0005;
-const BUBBLE_TARGET    = 9;      // keep this many bubbles alive at once
-const SPAWN_RADIUS_MIN = 0.20;   // metres from user head (min)
-const SPAWN_RADIUS_MAX = 0.50;   // metres from user head (max)
+const BUBBLE_TARGET    = 9;
+const SPAWN_RADIUS_MIN = 0.20;
+const SPAWN_RADIUS_MAX = 0.50;
+const BIG_RATIO        = 0.4;   // 40% of bubbles spawn as BIG
+
+// Physical size ranges in metres
+const RADIUS_BIG_MIN = 0.10;
+const RADIUS_BIG_MAX = 0.16;
+const RADIUS_SM_MIN  = 0.04;
+const RADIUS_SM_MAX  = 0.075;
+
+// Pop fires when fingertip is within this fraction of the bubble's radius
+const POP_FACTOR = 0.75;
 
 // ── Wave ring pool ────────────────────────────────────────────────────────────
 const RINGS_PER_POP  = 3;
-const RING_POOL_SIZE = RINGS_PER_POP * 5; // supports 5 simultaneous pops
-const WAVE_DURATION  = 1.2;               // seconds
+const RING_POOL_SIZE = RINGS_PER_POP * 5;
+const WAVE_DURATION  = 1.2;
 const WAVE_MAX_SCALE = 5.0;
 
 interface WaveRing {
-  mesh:     Mesh;
-  mat:      MeshBasicMaterial;
-  entity:   Entity;
-  startSec: number;
-  active:   boolean;
+  mesh:      Mesh;
+  mat:       MeshBasicMaterial;
+  entity:    Entity;
+  startSec:  number;
+  active:    boolean;
+  baseScale: number; // scales ring proportionally to the bubble that popped
 }
 
 // ── ECS components ────────────────────────────────────────────────────────────
@@ -85,7 +94,11 @@ export const BubbleOrigin = createComponent("BubbleOrigin", {
   z:          { type: Types.Float32, default: 0 },
   phase:      { type: Types.Float32, default: 0 },
   soundIndex: { type: Types.Int32,   default: 0 },
+  radius:     { type: Types.Float32, default: 0.08 },
 });
+
+/** Toggle bubbles on/off from the menu. */
+export const bubbleManager = { enabled: true };
 
 // ── System ────────────────────────────────────────────────────────────────────
 export class BubbleSystem extends createSystem({
@@ -97,11 +110,17 @@ export class BubbleSystem extends createSystem({
 
   private soundEntities: Entity[]  = [];
   private wavePool:      WaveRing[] = [];
-  private respawnTimers: number[]   = []; // epoch-ms timestamps
+  private respawnTimers: number[]   = [];
+
+  // Sound index pools split by BG / SM naming convention
+  private bigIndices:   number[] = [];
+  private smallIndices: number[] = [];
+
+  private prevEnabled = true;
 
   init() {
     // ─ Sound entities ──────────────────────────────────────────────────────
-    for (const src of BUBBLE_SRCS) {
+    BUBBLE_SRCS.forEach((src, i) => {
       const e = this.world.createTransformEntity(new Group());
       e.addComponent(AudioSource, {
         src,
@@ -110,9 +129,18 @@ export class BubbleSystem extends createSystem({
         playbackMode: PlaybackMode.Overlap,
       });
       this.soundEntities.push(e);
-    }
 
-    // ─ Pre-allocate wave ring pool ─────────────────────────────────────────
+      // Route by filename convention
+      if (src.includes("BG"))      this.bigIndices.push(i);
+      else if (src.includes("SM")) this.smallIndices.push(i);
+    });
+
+    // Fallback: if no categorised files yet, use full list for both sizes
+    const allIndices = Array.from({ length: BUBBLE_SRCS.length }, (_, i) => i);
+    if (this.bigIndices.length === 0)   this.bigIndices   = allIndices;
+    if (this.smallIndices.length === 0) this.smallIndices = allIndices;
+
+    // ─ Wave ring pool ──────────────────────────────────────────────────────
     for (let i = 0; i < RING_POOL_SIZE; i++) {
       const geo = new RingGeometry(0.04, 0.058, 32);
       const mat = new MeshBasicMaterial({
@@ -125,10 +153,10 @@ export class BubbleSystem extends createSystem({
       const mesh   = new Mesh(geo, mat);
       mesh.visible = false;
       const entity = this.world.createTransformEntity(mesh, { parent: this.world.sceneEntity });
-      this.wavePool.push({ mesh, mat, entity, startSec: 0, active: false });
+      this.wavePool.push({ mesh, mat, entity, startSec: 0, active: false, baseScale: 1 });
     }
 
-    // ─ Initial bubbles — wait for XR session so player.head has a real position
+    // ─ Initial spawn — wait for XR session so player.head is real ─────────
     const spawnInitial = () => {
       if (this.queries.bubbles.entities.size === 0) {
         for (let i = 0; i < BUBBLE_TARGET; i++) this.spawnBubble();
@@ -156,18 +184,24 @@ export class BubbleSystem extends createSystem({
   private spawnBubble(): void {
     this.player.head.getWorldPosition(this.headWorldPos);
 
-    // Uniform random point on sphere
     const theta = Math.random() * Math.PI * 2;
     const phi   = Math.acos(2 * Math.random() - 1);
     const r     = SPAWN_RADIUS_MIN + Math.random() * (SPAWN_RADIUS_MAX - SPAWN_RADIUS_MIN);
 
     const ox = this.headWorldPos.x + r * Math.sin(phi) * Math.cos(theta);
-    // Clamp to at least 1 m from the floor (AR floor ≈ y=0 in reference space)
-    // so bubbles never appear below the user's waist.
     const oy = Math.max(this.headWorldPos.y + r * Math.cos(phi), 1.0);
     const oz = this.headWorldPos.z + r * Math.sin(phi) * Math.sin(theta);
 
-    const geo  = new SphereGeometry(0.08, 16, 16);
+    // Pick size category and corresponding sound pool
+    const isBig  = Math.random() < BIG_RATIO;
+    const radius = isBig
+      ? RADIUS_BIG_MIN + Math.random() * (RADIUS_BIG_MAX - RADIUS_BIG_MIN)
+      : RADIUS_SM_MIN  + Math.random() * (RADIUS_SM_MAX  - RADIUS_SM_MIN);
+
+    const bucket     = isBig ? this.bigIndices : this.smallIndices;
+    const soundIndex = bucket[Math.floor(Math.random() * bucket.length)];
+
+    const geo  = new SphereGeometry(radius, 16, 16);
     const mat  = new MeshStandardMaterial({
       color:       0x44aaff,
       transparent: true,
@@ -181,23 +215,21 @@ export class BubbleSystem extends createSystem({
     this.world
       .createTransformEntity(mesh, { parent: this.world.sceneEntity })
       .addComponent(Bubble)
-      .addComponent(BubbleOrigin, {
-        x: ox, y: oy, z: oz,
-        phase:      Math.random() * Math.PI * 2,
-        soundIndex: Math.floor(Math.random() * BUBBLE_SOUND_COUNT),
-      });
+      .addComponent(BubbleOrigin, { x: ox, y: oy, z: oz, phase: Math.random() * Math.PI * 2, soundIndex, radius });
   }
 
-  private triggerWave(pos: Vector3, nowSec: number): void {
+  private triggerWave(pos: Vector3, nowSec: number, radius: number): void {
+    const baseScale = radius / 0.08; // normalize to ring geometry size
     let started = 0;
     for (const ring of this.wavePool) {
       if (ring.active || started >= RINGS_PER_POP) continue;
       ring.active      = true;
-      ring.startSec    = nowSec + started * 0.18; // stagger between rings
+      ring.startSec    = nowSec + started * 0.18;
+      ring.baseScale   = baseScale;
       ring.mesh.position.copy(pos);
       ring.mesh.lookAt(pos.x, pos.y + 1, pos.z);
       ring.mesh.visible = true;
-      ring.mesh.scale.setScalar(1);
+      ring.mesh.scale.setScalar(baseScale);
       ring.mat.opacity  = 0.7;
       started++;
     }
@@ -206,6 +238,23 @@ export class BubbleSystem extends createSystem({
   // ── update ────────────────────────────────────────────────────────────────
 
   update(_delta: number, _time: number) {
+    // ─ Toggle handling ───────────────────────────────────────────────────
+    if (!bubbleManager.enabled) {
+      if (this.prevEnabled) {
+        // Just disabled — clear everything
+        const toDispose = [...this.queries.bubbles.entities];
+        toDispose.forEach(e => e.dispose());
+        this.respawnTimers.length = 0;
+        this.prevEnabled = false;
+      }
+      return;
+    }
+    if (!this.prevEnabled) {
+      // Just re-enabled — spawn a fresh set
+      for (let i = 0; i < BUBBLE_TARGET; i++) this.spawnBubble();
+      this.prevEnabled = true;
+    }
+
     const nowMs  = Date.now();
     const nowSec = performance.now() / 1000;
     const now    = performance.now();
@@ -213,7 +262,7 @@ export class BubbleSystem extends createSystem({
     this.player.indexTipSpaces.left.getWorldPosition(this.tipLeft);
     this.player.indexTipSpaces.right.getWorldPosition(this.tipRight);
 
-    // ─ Respawn queue ────────────────────────────────────────────────────
+    // ─ Respawn queue ──────────────────────────────────────────────────────
     for (let i = this.respawnTimers.length - 1; i >= 0; i--) {
       if (nowMs >= this.respawnTimers[i]) {
         this.spawnBubble();
@@ -221,7 +270,7 @@ export class BubbleSystem extends createSystem({
       }
     }
 
-    // ─ Animate wave rings ────────────────────────────────────────────────
+    // ─ Wave rings ─────────────────────────────────────────────────────────
     for (const ring of this.wavePool) {
       if (!ring.active) continue;
       const elapsed = nowSec - ring.startSec;
@@ -233,31 +282,32 @@ export class BubbleSystem extends createSystem({
         ring.mat.opacity  = 0;
         ring.mesh.scale.setScalar(1);
       } else {
-        ring.mesh.scale.setScalar(1 + t * (WAVE_MAX_SCALE - 1));
-        ring.mat.opacity = 0.7 * (1 - t * t); // quadratic ease-out
+        ring.mesh.scale.setScalar(ring.baseScale * (1 + t * (WAVE_MAX_SCALE - 1)));
+        ring.mat.opacity = 0.7 * (1 - t * t);
       }
     }
 
-    // ─ Bubble float + pop detection ──────────────────────────────────────
+    // ─ Bubble float + pop ─────────────────────────────────────────────────
     this.queries.bubbles.entities.forEach((entity) => {
-      const mesh  = entity.object3D!;
-      const ox    = entity.getValue(BubbleOrigin, "x")     as number;
-      const oy    = entity.getValue(BubbleOrigin, "y")     as number;
-      const oz    = entity.getValue(BubbleOrigin, "z")     as number;
-      const phase = entity.getValue(BubbleOrigin, "phase") as number;
+      const mesh      = entity.object3D!;
+      const ox        = entity.getValue(BubbleOrigin, "x")          as number;
+      const oy        = entity.getValue(BubbleOrigin, "y")          as number;
+      const oz        = entity.getValue(BubbleOrigin, "z")          as number;
+      const phase     = entity.getValue(BubbleOrigin, "phase")      as number;
+      const radius    = entity.getValue(BubbleOrigin, "radius")     as number;
+      const popDist   = radius * POP_FACTOR;
 
-      // Gentle drift — no allocations
       mesh.position.x = ox + Math.cos(now * FLOAT_FREQ * 0.7 + phase) * 0.02;
       mesh.position.y = oy + Math.sin(now * FLOAT_FREQ       + phase) * 0.06;
       mesh.position.z = oz;
 
       if (
-        this.tipLeft.distanceTo(mesh.position)  < POP_DISTANCE ||
-        this.tipRight.distanceTo(mesh.position) < POP_DISTANCE
+        this.tipLeft.distanceTo(mesh.position)  < popDist ||
+        this.tipRight.distanceTo(mesh.position) < popDist
       ) {
         const si = entity.getValue(BubbleOrigin, "soundIndex") as number;
         AudioUtils.play(this.soundEntities[si]);
-        this.triggerWave(mesh.position, nowSec);
+        this.triggerWave(mesh.position, nowSec, radius);
         document.dispatchEvent(
           new CustomEvent("bubble-pop", { detail: { position: mesh.position.clone() } }),
         );
