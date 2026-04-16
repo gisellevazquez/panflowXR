@@ -69,7 +69,7 @@ export class MenuSystem extends createSystem({
     this.cleanupFuncs.push(
       this.world.visibilityState.subscribe((state) => {
         if (state === VisibilityState.Visible && this.panelEntity) {
-          if (!this.panelEntity.hasComponent(PokeInteractable)) {
+            if (!this.panelEntity.hasComponent(PokeInteractable)) {
             this.panelEntity.addComponent(PokeInteractable);
           }
           if (!this.panelEntity.hasComponent(RayInteractable)) {

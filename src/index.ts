@@ -88,7 +88,6 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
     physics:             false,
     sceneUnderstanding:  true,
     environmentRaycast:  false,
-    spatialUI:           true,
   },
 }).then((world) => {
 
