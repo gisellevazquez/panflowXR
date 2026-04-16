@@ -6,6 +6,7 @@ import {
   PanelUI,
   PanelDocument,
   PokeInteractable,
+  RayInteractable,
   Follower,
   FollowBehavior,
   UIKitDocument,
@@ -67,12 +68,13 @@ export class MenuSystem extends createSystem({
     // multiPointers are fully initialised before we enable touch routing.
     this.cleanupFuncs.push(
       this.world.visibilityState.subscribe((state) => {
-        if (
-          state === VisibilityState.Visible &&
-          this.panelEntity &&
-          !this.panelEntity.hasComponent(PokeInteractable)
-        ) {
-          this.panelEntity.addComponent(PokeInteractable);
+        if (state === VisibilityState.Visible && this.panelEntity) {
+          if (!this.panelEntity.hasComponent(PokeInteractable)) {
+            this.panelEntity.addComponent(PokeInteractable);
+          }
+          if (!this.panelEntity.hasComponent(RayInteractable)) {
+            this.panelEntity.addComponent(RayInteractable);
+          }
         }
       }),
     );
