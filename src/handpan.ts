@@ -1,30 +1,29 @@
 import {
   createComponent,
   createSystem,
-  AudioSource,
-  AudioUtils,
-  PlaybackMode,
   Vector3,
-  Group,
   Entity,
   DistanceGrabbable,
 } from "@iwsdk/core";
 
+import { reverbManager } from "./reverb.js";
+
 // World-space offsets from the handpan centre for each of the 8 tone fields.
 const ZONE_OFFSETS: [number, number, number][] = [
-  [ 0.077 , 0.457 , -0.002 ], // 0 Ding centre
-  [ -0.514 , 0.253 , -0.339], // 1 right
-  [ -0.052 , 0.205 , -0.697], // 2 right-back
-  [ 0.415 , 0.201 , -0.600], // 3 back
-  [ 0.737 , 0.172 , -0.238], // 4 left-back
-  [ 0.754 , 0.157 , 0.252], // 5 left
-  [ 0.449 , 0.183 , 0.609], // 6 left-front
-  [ -0.567 , 0.248 , 0.255], // 8 right (between 7 & 1) — adjust in zone-editor
+  [ 0.076 , 0.457 , 0.009 ], // 0 Dong centre
+  [ -0.557 , 0.248 , 0.278], // 1 right
+  [ -0.522 , 0.249 , -0.339], // 2 right-back
+  [ -0.080 , 0.217 , 0.690], // 3 back
+  [ -0.053 , 0.209 , -0.690], // 4 left-back
+  [ 0.448 , 0.192 , 0.597], // 5 left
+  [ 0.409 , 0.193 , -0.616], // 6 left-front
+  [ 0.752 , 0.165 , 0.228], // 7 front
+  [ 0.738 , 0.175 , -0.226], // 8 right (between 7 & 1) — adjust in zone-editor
 ];
 
 // 9 handpan tone-field recordings (zone number → zone number, direct 1:1)
 const NOTE_SRCS = [
-  "./audio/handpan/0.mp3", // zone 0 – Ding
+  "./audio/handpan/0.mp3", // zone 0 – Dong
   "./audio/handpan/1.mp3", // zone 1
   "./audio/handpan/2.mp3", // zone 2
   "./audio/handpan/3.mp3", // zone 3
@@ -35,7 +34,18 @@ const NOTE_SRCS = [
   "./audio/handpan/8.mp3", // zone 8
 ];
 
-const ZONE_RADIUS = 0.10;  // metres — hand within this distance triggers the zone
+// Per-zone trigger radius in metres — zone 0 (Ding) gets a larger target
+const ZONE_RADII: number[] = [
+  0.18, // 0 Ding — larger
+  0.15, // 1
+  0.15, // 2
+  0.15, // 3
+  0.15, // 4
+  0.15, // 5
+  0.15, // 6
+  0.15, // 7
+  0.15, // 8
+];
 const COOLDOWN_MS = 600;   // minimum ms between re-triggers of the same zone
 
 export const Handpan = createComponent("Handpan", {});
@@ -44,7 +54,6 @@ export class HandpanSystem extends createSystem({
   handpan: { required: [Handpan] },
 }) {
   // Pre-allocated work vectors — zero allocations in update()
-  // Zone count is derived from ZONE_OFFSETS so array size always matches.
   private zoneWorldPos: Vector3[] = Array.from({ length: ZONE_OFFSETS.length }, () => new Vector3());
   private tipLeft  = new Vector3();
   private tipRight = new Vector3();
@@ -52,25 +61,22 @@ export class HandpanSystem extends createSystem({
   private lastPlayed: number[]  = new Array(ZONE_OFFSETS.length).fill(0);
   private zoneActive: boolean[] = new Array(ZONE_OFFSETS.length).fill(false);
 
-  // One invisible audio entity per note, created in init()
-  private noteEntities: Entity[] = [];
+  // AudioBuffers loaded from reverbManager's AudioContext so notes play through reverb.
+  private noteBuffers: (AudioBuffer | null)[] = new Array(NOTE_SRCS.length).fill(null);
+  private loadingStarted = false;
 
   init() {
-    for (const src of NOTE_SRCS) {
-      const entity = this.world.createTransformEntity(new Group());
-      entity.addComponent(AudioSource, {
-        src,
-        positional: false,  // omnidirectional — instrument floats in front of user
-        volume: 0.8,
-        playbackMode: PlaybackMode.Overlap, // notes can ring together
-      });
-      this.noteEntities.push(entity);
-    }
+    // No IWSDK AudioSource entities needed — notes play via reverbManager.playOneShot()
   }
 
   update(_delta: number, _time: number) {
+    // Lazy-load buffers once the reverb AudioContext is ready (after sessionstart)
+    if (!this.loadingStarted && reverbManager.audioContext) {
+      this.loadingStarted = true;
+      this._loadBuffers();
+    }
+
     // Hand tracking: use index fingertips. Controller fallback: use grip origin.
-    // (indexTipSpaces is undefined in controller mode — guard to avoid crash)
     const tips = this.player.indexTipSpaces as typeof this.player.indexTipSpaces | undefined;
     if (tips?.left)  tips.left.getWorldPosition(this.tipLeft);
     else             this.player.gripSpaces?.left?.getWorldPosition(this.tipLeft);
@@ -82,10 +88,7 @@ export class HandpanSystem extends createSystem({
     for (const entity of this.queries.handpan.entities) {
       const mesh = entity.object3D!;
 
-      // Transform zone offsets from the handpan's LOCAL space → world space.
-      // localToWorld accounts for position, rotation AND scale — so zones
-      // always stay glued to the correct spot on the model regardless of how
-      // the user has moved, rotated, or resized the handpan.
+      // Transform zone offsets from LOCAL → world space (accounts for position, rotation, scale)
       for (let i = 0; i < ZONE_OFFSETS.length; i++) {
         const [ox, oy, oz] = ZONE_OFFSETS[i];
         this.zoneWorldPos[i].set(ox, oy, oz);
@@ -94,14 +97,18 @@ export class HandpanSystem extends createSystem({
 
       for (let i = 0; i < ZONE_OFFSETS.length; i++) {
         const zp = this.zoneWorldPos[i];
+        const radius = ZONE_RADII[i] ?? 0.15;
         const inRange =
-          this.tipLeft.distanceTo(zp)  < ZONE_RADIUS ||
-          this.tipRight.distanceTo(zp) < ZONE_RADIUS;
+          this.tipLeft.distanceTo(zp)  < radius ||
+          this.tipRight.distanceTo(zp) < radius;
 
         // Rising-edge trigger with cooldown
         if (inRange && !this.zoneActive[i] && now - this.lastPlayed[i] > COOLDOWN_MS) {
           this.lastPlayed[i] = now;
-          AudioUtils.play(this.noteEntities[i]);
+          const buf = this.noteBuffers[i];
+          if (buf) {
+            reverbManager.playOneShot(buf, 0.8);
+          }
           document.dispatchEvent(
             new CustomEvent("handpan-note", { detail: { index: i } }),
           );
@@ -111,12 +118,18 @@ export class HandpanSystem extends createSystem({
       }
     }
   }
+
+  private _loadBuffers(): void {
+    NOTE_SRCS.forEach((src, i) => {
+      reverbManager.loadBuffer(src).then((buf) => {
+        this.noteBuffers[i] = buf;
+      });
+    });
+  }
 }
 
 /**
  * Shared singleton for toggling handpan grab lock.
- * Set `entity` from index.ts after the entity is created.
- * Call `toggle()` from MenuSystem when the lock button is pressed.
  */
 export const handpanLockManager = {
   entity: null as Entity | null,
@@ -125,8 +138,6 @@ export const handpanLockManager = {
   toggle(): boolean {
     if (!this.entity) return this.locked;
     this.locked = !this.locked;
-    // Disable/enable movement via field values — avoids GrabSystem edge cases
-    // that occur when removing/re-adding the component mid-grab.
     this.entity.setValue(DistanceGrabbable, "translate", !this.locked);
     this.entity.setValue(DistanceGrabbable, "rotate",    !this.locked);
     return this.locked;

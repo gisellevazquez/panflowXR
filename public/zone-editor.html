@@ -421,18 +421,22 @@ function updateInfoPanel() {
 
 function updateExport() {
   const lines = zones.map((z, i) => {
-    const name  = i === 0 ? ' // Ding (centro)' : ``;
-    if (!z.placed) return `  [ 0.000,  0.000,  0.000],${name} // ${i} — ⚠ no colocado`;
+    const comment = i === 0 ? ' // 0 Ding centre' : ` // ${i}`;
+    if (!z.placed) return `  [ 0.000,  0.000,  0.000],${comment} — ⚠ no colocado`;
     const p = z.position;
-    return `  [${fmt(p.x)}, ${fmt(p.y)}, ${fmt(p.z)}],${name}${name ? '' : ` // ${i}`}`;
+    return `  [${fmt(p.x)}, ${fmt(p.y)}, ${fmt(p.z)}],${comment}`;
   });
 
   document.getElementById('export-code').value =
-    `// Pega esto en src/handpan.ts, reemplazando ZONE_OFFSETS\n` +
+    `// Pega esto en src/handpan.ts\n` +
     `const ZONE_OFFSETS: [number, number, number][] = [\n` +
     lines.join('\n') + '\n' +
     `];\n\n` +
-    `const ZONE_RADIUS = 0.10; // metros — ajustar según pruebas`;
+    `// Radio por zona (metros) — zona 0 más grande para el Ding\n` +
+    `const ZONE_RADII: number[] = [\n` +
+    `  0.18, // 0 Ding — más grande\n` +
+    zones.slice(1).map((_, i) => `  0.15, // ${i + 1}`).join('\n') + '\n' +
+    `];\n`;
 }
 
 function setStatus(msg) {
@@ -443,13 +447,29 @@ function setStatus(msg) {
 document.getElementById('btn-clear-zone').onclick = () => clearZone(selectedZone);
 document.getElementById('btn-clear-all').onclick  = () => clearAll();
 document.getElementById('copy-btn').onclick = () => {
-  const code = document.getElementById('export-code').value;
-  navigator.clipboard.writeText(code).then(() => {
-    const btn = document.getElementById('copy-btn');
+  const ta  = document.getElementById('export-code');
+  const btn = document.getElementById('copy-btn');
+
+  // Primary: Clipboard API
+  const showCopied = () => {
     btn.textContent = '✓ Copiado';
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Copiar TypeScript'; btn.classList.remove('copied'); }, 2000);
-  });
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(showCopied).catch(() => {
+      // Fallback: select + execCommand
+      ta.select();
+      document.execCommand('copy');
+      showCopied();
+    });
+  } else {
+    // Fallback for non-HTTPS or permission denied
+    ta.select();
+    document.execCommand('copy');
+    showCopied();
+  }
 };
 
 // ── Resize ────────────────────────────────────────────────────────────────────

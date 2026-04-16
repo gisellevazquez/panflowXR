@@ -97,9 +97,10 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
     if (reverbManager.audioContext) return;
     const ok = reverbManager.init();
     if (ok) {
+      // Ambient goes directly to destination — reverb is reserved for handpan notes
       ambientManager.init(
         reverbManager.audioContext,
-        (node) => reverbManager.connectSource(node),
+        (node) => node.connect(reverbManager.audioContext.destination),
       );
     }
   };

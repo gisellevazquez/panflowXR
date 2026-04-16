@@ -54,6 +54,31 @@ export class ReverbManager {
 
   get audioContext(): AudioContext { return this.ctx; }
 
+  /** Load an audio file into an AudioBuffer using this context. */
+  async loadBuffer(url: string): Promise<AudioBuffer | null> {
+    if (!this.ctx) return null;
+    try {
+      const res = await fetch(url);
+      const raw = await res.arrayBuffer();
+      return await this.ctx.decodeAudioData(raw);
+    } catch (e) {
+      console.warn("[ReverbManager] Failed to load buffer:", url, e);
+      return null;
+    }
+  }
+
+  /** Play a one-shot buffer through the dry/wet reverb chain. */
+  playOneShot(buffer: AudioBuffer, volume = 1): void {
+    if (!this.ctx) return;
+    const src  = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    const gain = this.ctx.createGain();
+    gain.gain.value = volume;
+    src.connect(gain);
+    gain.connect(this.masterIn);
+    src.start();
+  }
+
   setWet(t: number): void {
     if (!this.ctx) return;
     const clamped = Math.min(1, Math.max(0, t));
