@@ -22,16 +22,16 @@ import { MenuSystem }             from "./ui.js";
 const assets: AssetManifest = {
   handpan: { url: "./gltf/handpan/hand_pan.glb", type: AssetType.GLTF, priority: "critical" },
 
-  // ── Handpan tone fields (9 zones) ─────────────────────────────────────────
-  hp_0: { url: "./audio/handpan/a-clean-dry-audio-recordi-aqnsnowb.wav", type: AssetType.Audio, priority: "background" },
-  hp_1: { url: "./audio/handpan/a-clean-dry-audio-recordi-j7w6oyqr.wav", type: AssetType.Audio, priority: "background" },
-  hp_2: { url: "./audio/handpan/a-clean-dry-audio-recordi-2sve7t35.wav", type: AssetType.Audio, priority: "background" },
-  hp_3: { url: "./audio/handpan/a-clean-dry-audio-recordi-g3ulhlw2.wav", type: AssetType.Audio, priority: "background" },
-  hp_4: { url: "./audio/handpan/a-clean-dry-audio-recordi-kanmttwa.wav", type: AssetType.Audio, priority: "background" },
-  hp_5: { url: "./audio/handpan/a-clean-dry-audio-recordi-7punn5mk.wav", type: AssetType.Audio, priority: "background" },
-  hp_6: { url: "./audio/handpan/a-clean-dry-audio-recordi-kihqnnq7.wav", type: AssetType.Audio, priority: "background" },
-  hp_7: { url: "./audio/handpan/a-clean-dry-audio-recordi-6okq6qif.wav", type: AssetType.Audio, priority: "background" },
-  hp_8: { url: "./audio/handpan/a-clean-dry-audio-recordi-yyfcncyj.wav", type: AssetType.Audio, priority: "background" },
+  // ── Handpan tone fields (9 zones, 0–8) ────────────────────────────────────
+  hp_0: { url: "./audio/handpan/0.mp3", type: AssetType.Audio, priority: "background" },
+  hp_1: { url: "./audio/handpan/1.mp3", type: AssetType.Audio, priority: "background" },
+  hp_2: { url: "./audio/handpan/2.mp3", type: AssetType.Audio, priority: "background" },
+  hp_3: { url: "./audio/handpan/3.mp3", type: AssetType.Audio, priority: "background" },
+  hp_4: { url: "./audio/handpan/4.mp3", type: AssetType.Audio, priority: "background" },
+  hp_5: { url: "./audio/handpan/5.mp3", type: AssetType.Audio, priority: "background" },
+  hp_6: { url: "./audio/handpan/6.mp3", type: AssetType.Audio, priority: "background" },
+  hp_7: { url: "./audio/handpan/7.mp3", type: AssetType.Audio, priority: "background" },
+  hp_8: { url: "./audio/handpan/8.mp3", type: AssetType.Audio, priority: "background" },
 
   // ── Bubble pop sounds — 32 singing-bowl recordings ────────────────────────
   bowl_00: { url: "./audio/bubbles/Kasper - Singing Bowls - 04 Bowl 1 Articulation 1 Microphone 1.mp3", type: AssetType.Audio, priority: "background" },

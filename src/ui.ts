@@ -15,7 +15,6 @@ import {
 
 import { reverbManager }  from "./reverb.js";
 import { ambientManager, AmbientType } from "./ambient.js";
-import { handpanLockManager } from "./handpan.js";
 
 // How much reverb changes per button press (0..1 range divided into 10 steps)
 const REVERB_STEP = 0.1;
@@ -228,18 +227,5 @@ export class MenuSystem extends createSystem({
       });
     }
 
-    // ─ Handpan lock ────────────────────────────────────────────────────────
-    doc.getElementById("lock-btn")?.addEventListener("click", () => {
-      const isLocked = handpanLockManager.toggle();
-      const btn = doc.getElementById("lock-btn") as any;
-      if (btn) {
-        btn.setProperties({
-          text:            isLocked ? "Unlock Position" : "Lock Position",
-          backgroundColor: isLocked ? 0x1e3a5f : 0x18181b,
-          borderColor:     isLocked ? 0x3b82f6 : 0x27272a,
-          color:           isLocked ? 0x93c5fd : 0xa1a1aa,
-        });
-      }
-    });
   }
 }

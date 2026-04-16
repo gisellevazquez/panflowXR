@@ -10,8 +10,7 @@ import {
   DistanceGrabbable,
 } from "@iwsdk/core";
 
-// World-space offsets from the handpan centre for each of the 9 tone fields.
-// Zone 8 is interpolated between zones 7 & 1 — fine-tune in zone-editor.
+// World-space offsets from the handpan centre for each of the 8 tone fields.
 const ZONE_OFFSETS: [number, number, number][] = [
   [ 0.077 , 0.457 , -0.002 ], // 0 Ding centre
   [ -0.514 , 0.253 , -0.339], // 1 right
@@ -23,17 +22,17 @@ const ZONE_OFFSETS: [number, number, number][] = [
   [ -0.567 , 0.248 , 0.255], // 8 right (between 7 & 1) — adjust in zone-editor
 ];
 
-// 9 handpan tone-field recordings
+// 9 handpan tone-field recordings (zone number → zone number, direct 1:1)
 const NOTE_SRCS = [
-  "./audio/handpan/a-clean-dry-audio-recordi-aqnsnowb.wav", // zone 0 – Ding
-  "./audio/handpan/a-clean-dry-audio-recordi-j7w6oyqr.wav", // zone 1
-  "./audio/handpan/a-clean-dry-audio-recordi-2sve7t35.wav", // zone 2
-  "./audio/handpan/a-clean-dry-audio-recordi-g3ulhlw2.wav", // zone 3
-  "./audio/handpan/a-clean-dry-audio-recordi-kanmttwa.wav", // zone 4
-  "./audio/handpan/a-clean-dry-audio-recordi-7punn5mk.wav", // zone 5
-  "./audio/handpan/a-clean-dry-audio-recordi-kihqnnq7.wav", // zone 6
-  "./audio/handpan/a-clean-dry-audio-recordi-6okq6qif.wav", // zone 7
-  "./audio/handpan/a-clean-dry-audio-recordi-yyfcncyj.wav", // zone 8 – front
+  "./audio/handpan/0.mp3", // zone 0 – Ding
+  "./audio/handpan/1.mp3", // zone 1
+  "./audio/handpan/2.mp3", // zone 2
+  "./audio/handpan/3.mp3", // zone 3
+  "./audio/handpan/4.mp3", // zone 4
+  "./audio/handpan/5.mp3", // zone 5
+  "./audio/handpan/6.mp3", // zone 6
+  "./audio/handpan/7.mp3", // zone 7
+  "./audio/handpan/8.mp3", // zone 8
 ];
 
 const ZONE_RADIUS = 0.10;  // metres — hand within this distance triggers the zone

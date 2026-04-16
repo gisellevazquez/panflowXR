@@ -59,8 +59,9 @@ export class ReverbManager {
     const clamped = Math.min(1, Math.max(0, t));
     this._wet = clamped;
     const now = this.ctx.currentTime;
-    this.dryGain.gain.setTargetAtTime(1 - clamped * 0.7, now, 0.15);
-    this.wetGain.gain.setTargetAtTime(clamped,            now, 0.15);
+    // Dry fades out fully; wet boosted 3× so the effect is clearly audible
+    this.dryGain.gain.setTargetAtTime(1 - clamped,       now, 0.1);
+    this.wetGain.gain.setTargetAtTime(clamped * 3,        now, 0.1);
   }
 
   get wet(): number { return this._wet; }
