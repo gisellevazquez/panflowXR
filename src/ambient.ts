@@ -22,10 +22,12 @@ export const AMBIENT_LABELS: Record<AmbientType, string> = {
 
 export class AmbientSoundManager {
   private ctx!:     AudioContext;
-  private out!:     GainNode;    // connects to reverbManager.masterIn
+  private out!:     GainNode;
   private nodes:    AudioNode[]  = [];
   private current:  AmbientType = "none";
-  readonly volume = 0.25;
+  private _volume                = 0.15;
+
+  get volume(): number { return this._volume; }
 
   /**
    * @param ctx        AudioContext from ReverbManager
@@ -34,8 +36,14 @@ export class AmbientSoundManager {
   init(ctx: AudioContext, connectFn: (n: AudioNode) => void): void {
     this.ctx = ctx;
     this.out = ctx.createGain();
-    this.out.gain.value = this.volume;
+    this.out.gain.value = this._volume;
     connectFn(this.out);
+  }
+
+  setVolume(v: number): void {
+    if (!this.ctx) return;
+    this._volume = Math.min(1, Math.max(0, v));
+    this.out.gain.setTargetAtTime(this._volume, this.ctx.currentTime, 0.05);
   }
 
   setType(type: AmbientType): void {

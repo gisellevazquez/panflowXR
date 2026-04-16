@@ -11,13 +11,14 @@ import {
   FollowBehavior,
   UIKitDocument,
   VisibilityState,
+  Vector3,
 } from "@iwsdk/core";
 
 import { reverbManager }  from "./reverb.js";
 import { ambientManager, AmbientType } from "./ambient.js";
 
-// How much reverb changes per button press (0..1 range divided into 10 steps)
-const REVERB_STEP = 0.1;
+const REVERB_STEP      = 0.1;
+const AMBIENT_VOL_STEP = 0.05;
 
 /**
  * MenuSystem — floating settings panel anchored above the left wrist.
@@ -134,6 +135,14 @@ export class MenuSystem extends createSystem({
       if (this.panelEntity?.hasComponent(Follower)) {
         this.panelEntity.removeComponent(Follower);
       }
+      // Rotate panel to face the player's head (only Y-axis, keeps panel upright)
+      const obj = this.panelEntity?.object3D;
+      if (obj && this.player.head) {
+        const headPos = new Vector3();
+        this.player.head.getWorldPosition(headPos);
+        headPos.y = obj.getWorldPosition(new Vector3()).y;
+        obj.lookAt(headPos);
+      }
     } else {
       // Re-attach Follower so panel silently tracks wrist while hidden
       const target = this.player.gripSpaces?.left;
@@ -203,6 +212,24 @@ export class MenuSystem extends createSystem({
     doc.getElementById("reverb-up")?.addEventListener("click", () => {
       reverbManager.setWet(Math.min(1, reverbManager.wet + REVERB_STEP));
       updateDisplay();
+    });
+
+    // ─ Ambient volume ──────────────────────────────────────────────────────
+    const volDisplay = doc.getElementById("ambient-vol-display");
+
+    const updateVolDisplay = () => {
+      const pct = Math.round(ambientManager.volume * 100);
+      if (volDisplay) (volDisplay as any).setProperties({ text: `${pct}%` });
+    };
+
+    doc.getElementById("ambient-vol-down")?.addEventListener("click", () => {
+      ambientManager.setVolume(Math.max(0, ambientManager.volume - AMBIENT_VOL_STEP));
+      updateVolDisplay();
+    });
+
+    doc.getElementById("ambient-vol-up")?.addEventListener("click", () => {
+      ambientManager.setVolume(Math.min(1, ambientManager.volume + AMBIENT_VOL_STEP));
+      updateVolDisplay();
     });
 
     // ─ Ambient sound buttons ───────────────────────────────────────────────

@@ -175,6 +175,15 @@
   <!-- ── Ambient sound ────────────────────────────────────────── -->
   <div class="ambient-section">
     <span class="section-label">Ambient Sound</span>
+    <div class="reverb-row">
+      <span class="reverb-edge-label">Off</span>
+      <div class="reverb-controls">
+        <button class="reverb-btn" id="ambient-vol-down">-</button>
+        <span id="ambient-vol-display">15%</span>
+        <button class="reverb-btn" id="ambient-vol-up">+</button>
+      </div>
+      <span class="reverb-edge-label">Loud</span>
+    </div>
     <div class="ambient-grid">
       <button class="ambient-btn ambient-active" id="ambient-none">None</button>
       <button class="ambient-btn" id="ambient-rain">Rain</button>
