@@ -20,8 +20,8 @@
     /* ── Landing scene ─────────────────────────────────────────────── */
     #landing-scene { position: fixed; inset: 0; z-index: 0; }
 
-    /* ── IWSDK scene — sits behind, becomes visible after XR starts ── */
-    #scene-container { position: fixed; inset: 0; z-index: 1; }
+    /* ── IWSDK scene — hidden behind landing; XR compositor takes over on Quest ── */
+    #scene-container { position: fixed; inset: 0; z-index: -1; }
 
     /* ── Landing UI overlay ────────────────────────────────────────── */
     #landing-ui {
