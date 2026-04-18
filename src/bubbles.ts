@@ -288,7 +288,7 @@ export class BubbleSystem extends createSystem({
       ) {
         const si  = entity.getValue(BubbleOrigin, "soundIndex") as number;
         const buf = this.soundBuffers[si];
-        if (buf) reverbManager.playOneShot(buf, 0.7);
+        if (buf) reverbManager.playOneShot(buf, 1.0);
         this.triggerWave(mesh.position, nowSec, radius);
         document.dispatchEvent(
           new CustomEvent("bubble-pop", { detail: { position: mesh.position.clone() } }),

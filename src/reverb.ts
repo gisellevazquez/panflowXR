@@ -58,11 +58,13 @@ export class ReverbManager {
   async loadBuffer(url: string): Promise<AudioBuffer | null> {
     if (!this.ctx) return null;
     try {
-      const res = await fetch(url);
+      const encoded = url.replace(/ /g, "%20");
+      const res = await fetch(encoded);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.arrayBuffer();
       return await this.ctx.decodeAudioData(raw);
     } catch (e) {
-      console.warn("[ReverbManager] Failed to load buffer:", url, e);
+      console.error("[ReverbManager] Failed to load buffer:", url, e);
       return null;
     }
   }
