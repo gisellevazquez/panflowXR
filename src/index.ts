@@ -57,7 +57,7 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   render: { stencil: true }, // required for IWSDK AnimatedHand ghost-hand visuals
   xr: {
     sessionMode: SessionMode.ImmersiveAR,
-    offer: "always",
+    offer: "none",
     features: {
       handTracking:   { required: true },
       anchors:        true,
@@ -91,6 +91,12 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   };
 
   world.renderer.xr.addEventListener("sessionstart", initAudio);
+  world.renderer.xr.addEventListener("sessionstart", () => {
+    window.dispatchEvent(new Event("panflow-xr-started"));
+  });
+
+  // Exposed for the landing page "Enter Experience" button
+  (window as any).panflowEnterXR = () => world.launchXR();
 
   // ── Handpan ───────────────────────────────────────────────────────────────
   const gltf = AssetManager.getGLTF("handpan");

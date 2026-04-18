@@ -1,20 +1,170 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-    <!-- WebXR + Three.js + WebAudio require eval for shader compilation / audio worklets -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' blob: data: wss:; worker-src 'self' blob:; font-src 'self' data:;"
-    />
-    <title>panflowXR</title>
-  </head>
-  <body style="margin: 0">
-    <div id="scene-container"></div>
-    <script type="module" src="/src/index.ts"></script>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <!-- WebXR + Three.js + WebAudio require eval for shader compilation / audio worklets -->
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com https://www.unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://unpkg.com https://www.unpkg.com; media-src 'self' blob:; connect-src 'self' blob: data: wss: https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com https://www.unpkg.com https://cdn.jsdelivr.net; worker-src 'self' blob:; font-src 'self' data: https://fonts.gstatic.com;"
+  />
+  <title>Panflow XR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #dbeaf2; color: #1a2838; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    canvas { display: block; }
+
+    /* ── Landing scene ─────────────────────────────────────────────── */
+    #landing-scene { position: fixed; inset: 0; z-index: 0; }
+
+    /* ── IWSDK scene — sits behind, becomes visible after XR starts ── */
+    #scene-container { position: fixed; inset: 0; z-index: 1; }
+
+    /* ── Landing UI overlay ────────────────────────────────────────── */
+    #landing-ui {
+      position: fixed; inset: 0; z-index: 2; pointer-events: none;
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+    }
+    #landing-ui > * { pointer-events: auto; }
+
+    /* ── HUD chrome ────────────────────────────────────────────────── */
+    .hud {
+      position: fixed; z-index: 3; pointer-events: none;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: .22em; text-transform: uppercase;
+      color: rgba(31,42,34,.62); font-weight: 500;
+    }
+    .hud.tl { top: 24px; left: 28px; display: flex; align-items: center; gap: 10px; }
+    .hud.tr { top: 24px; right: 28px; text-align: right; }
+    .hud.bl { bottom: 24px; left: 28px; display: flex; align-items: center; gap: 10px; }
+    .hud.br { bottom: 24px; right: 28px; text-align: right; }
+    .hud .dot { width: 6px; height: 6px; border-radius: 50%; background: #4a7a5c; box-shadow: 0 0 10px #4a7a5c; }
+    .hud .glyph { font-size: 9px; opacity: .55; letter-spacing: .5em; }
+    .corner { position: fixed; width: 22px; height: 22px; z-index: 3; pointer-events: none; border: 1px solid rgba(31,42,34,.22); }
+    .corner.tl { top: 18px; left: 18px; border-right: 0; border-bottom: 0; }
+    .corner.tr { top: 18px; right: 18px; border-left: 0; border-bottom: 0; }
+    .corner.bl { bottom: 18px; left: 18px; border-right: 0; border-top: 0; }
+    .corner.br { bottom: 18px; right: 18px; border-left: 0; border-top: 0; }
+
+    /* ── Hero ──────────────────────────────────────────────────────── */
+    .hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 36px; padding: 0 40px; }
+
+    .title-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .title-kicker {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .5em;
+      text-transform: uppercase; color: rgba(31,42,34,.55); font-weight: 500;
+      margin-bottom: 6px; display: flex; align-items: center; gap: 12px;
+    }
+    .title-kicker .line { width: 28px; height: 1px; background: currentColor; opacity: .6; }
+    .title {
+      font-family: 'Inter', sans-serif; font-weight: 900; line-height: .9;
+      letter-spacing: -.055em; margin: 0;
+      font-size: clamp(84px, 14vw, 200px);
+      color: #ffffff; text-shadow: 0 2px 40px rgba(0,0,0,.4);
+    }
+    .title .xr {
+      display: inline-block; font-weight: 500; font-family: 'JetBrains Mono', monospace;
+      font-size: .28em; letter-spacing: .3em; vertical-align: middle;
+      padding: 10px 16px; margin-left: 18px; border: 1px solid rgba(255,255,255,.6);
+      border-radius: 999px; color: #ffffff; transform: translateY(-.35em);
+    }
+
+    .enter-btn {
+      appearance: none; border: 1px solid rgba(31,42,34,.28); cursor: pointer;
+      font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px;
+      letter-spacing: .32em; text-transform: uppercase;
+      background: rgba(255,255,255,.35); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      color: #1f2a22;
+      padding: 20px 42px; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 18px;
+      transition: all .3s cubic-bezier(.2,.7,.2,1);
+      position: relative; overflow: hidden;
+    }
+    .enter-btn::before {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, rgba(138,200,168,.35), transparent 60%);
+      opacity: 0; transition: opacity .3s;
+    }
+    .enter-btn:hover { border-color: rgba(31,42,34,.6); background: rgba(255,255,255,.55); transform: translateY(-2px); }
+    .enter-btn:hover::before { opacity: 1; }
+    .enter-btn:disabled { opacity: .6; cursor: default; transform: none; }
+    .arrow {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 1px solid rgba(31,42,34,.55);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px; transition: transform .3s; letter-spacing: 0;
+    }
+    .enter-btn:hover .arrow { transform: translateX(4px); background: rgba(255,255,255,.4); }
+
+    /* ── Loading overlay ───────────────────────────────────────────── */
+    #landing-loading {
+      position: fixed; inset: 0; z-index: 20; background: rgba(219,234,242,.92);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity .8s;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: .4em; text-transform: uppercase; color: rgba(31,42,34,.7); font-weight: 500;
+    }
+    #landing-loading.hidden { opacity: 0; pointer-events: none; }
+    #landing-loading .pulse {
+      width: 6px; height: 6px; border-radius: 50%; background: #4a7a5c;
+      margin-right: 14px; animation: pulse 1.6s ease-in-out infinite; box-shadow: 0 0 12px #4a7a5c;
+    }
+    @keyframes pulse { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1.3)} }
+
+    @media (max-width: 720px) {
+      .hud { font-size: 9px; }
+      .hud.tl,.hud.bl { left: 16px; }
+      .hud.tr,.hud.br { right: 16px; }
+      .corner.tl,.corner.tr { top: 12px; }
+      .corner.bl,.corner.br { bottom: 12px; }
+      .corner.tl,.corner.bl { left: 12px; }
+      .corner.tr,.corner.br { right: 12px; }
+      .title .xr { display: block; margin: 8px auto 0; transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── IWSDK XR scene (hidden until session starts) ─────────────────────── -->
+<div id="scene-container"></div>
+
+<!-- ── Landing Three.js canvas ──────────────────────────────────────────── -->
+<div id="landing-scene"></div>
+
+<!-- ── HUD chrome ───────────────────────────────────────────────────────── -->
+<span class="corner tl"></span><span class="corner tr"></span>
+<span class="corner bl"></span><span class="corner br"></span>
+<div class="hud tl"><span class="dot"></span><span>PANFLOW</span></div>
+<div class="hud bl"><span class="glyph">◐ ◑ ◒ ◓</span><span>handpan resonance ready</span></div>
+<div class="hud br"><span>META QUEST · WEBXR</span></div>
+
+<!-- ── Landing UI ───────────────────────────────────────────────────────── -->
+<div id="landing-ui">
+  <main class="hero">
+    <div class="title-wrap">
+      <div class="title-kicker">
+        <span class="line"></span>
+        <span>Mixed reality meditation</span>
+        <span class="line"></span>
+      </div>
+      <h1 class="title">Panflow<span class="xr">XR</span></h1>
+    </div>
+    <button class="enter-btn" id="enterBtn">
+      <span>Enter Experience</span>
+      <span class="arrow">→</span>
+    </button>
+  </main>
+</div>
+
+<!-- ── Loading overlay ───────────────────────────────────────────────────── -->
+<div id="landing-loading" class="hidden"><span class="pulse"></span>Entering Panflow</div>
+
+<!-- ── Scripts ───────────────────────────────────────────────────────────── -->
+<script type="module" src="/src/landing.ts"></script>
+<script type="module" src="/src/index.ts"></script>
+
+</body>
 </html>
