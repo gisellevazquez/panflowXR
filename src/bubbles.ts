@@ -17,41 +17,24 @@ import {
   VisibilityState,
 } from "@iwsdk/core";
 
-// All singing-bowl recordings. Rename files with "BG" or "SM" in the name
-// to automatically route them to big or small bubbles respectively.
+// Singing-bowl recordings — "BG" suffix = big bubbles, "SM" suffix = small bubbles
 const BUBBLE_SRCS = [
-  "./audio/bubbles/Kasper - Singing Bowls - 04 Bowl 1 Articulation 1 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 05 Bowl 1 Articulation 1 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 06 Bowl 1 Articulation 2 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 07 Bowl 1 Articulation 2 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 08 Bowl 1 Articulation 3 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 09 Bowl 1 Articulation 3 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 10 Bowl 1 Articulation 4 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 11 Bowl 1 Articulation 4 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 12 Bowl 2 Articulation 1 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 13 Bowl 2 Articulation 1 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 14 Bowl 2 Articulation 2 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 15 Bowl 2 Articulation 2 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 16 Bowl 2 Articulation 3 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 17 Bowl 2 Articulation 3 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 18 Bowl 2 Articulation 4 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 19 Bowl 2 Articulation 4 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 20 Bowl 3 Articulation 1 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 21 Bowl 3 Articulation 1 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 22 Bowl 3 Articulation 2 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 23 Bowl 3 Articulation 2 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 24 Bowl 3 Articulation 3 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 25 Bowl 3 Articulation 3 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 26 Bowl 3 Articulation 4 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 27 Bowl 3 Articulation 4 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 28 Bowl 4 Articulation 1 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 29 Bowl 4 Articulation 1 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 30 Bowl 4 Articulation 2 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 31 Bowl 4 Articulation 2 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 32 Bowl 4 Articulation 3 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 33 Bowl 4 Articulation 3 Microphone 2.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 34 Bowl 4 Articulation 4 Microphone 1.mp3",
-  "./audio/bubbles/Kasper - Singing Bowls - 35 Bowl 4 Articulation 4 Microphone 2.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 04 Bowl 1 Articulation 1 Microphone 1 BG.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 06 Bowl 1 Articulation 2 Microphone 1 BG.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 08 Bowl 1 Articulation 3 Microphone 1 SM.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 10 Bowl 1 Articulation 4 Microphone 1 BG.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 12 Bowl 2 Articulation 1 Microphone 1 SM.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 14 Bowl 2 Articulation 2 Microphone 1 SM.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 16 Bowl 2 Articulation 3 Microphone 1 SM.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 18 Bowl 2 Articulation 4 Microphone 1 SM.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 20 Bowl 3 Articulation 1 Microphone 1 SM.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 22 Bowl 3 Articulation 2 Microphone 1 SM.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 24 Bowl 3 Articulation 3 Microphone 1 SM.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 26 Bowl 3 Articulation 4 Microphone 1 sm.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 28 Bowl 4 Articulation 1 Microphone 1 BG.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 30 Bowl 4 Articulation 2 Microphone 1 BG.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 32 Bowl 4 Articulation 3 Microphone 1 SM.mp3",
+  "./audio/bubbles/Kasper - Singing Bowls - 34 Bowl 4 Articulation 4 Microphone 1 BG.mp3",
 ] as const;
 
 // ── Tuning ────────────────────────────────────────────────────────────────────
@@ -130,9 +113,10 @@ export class BubbleSystem extends createSystem({
       });
       this.soundEntities.push(e);
 
-      // Route by filename convention
-      if (src.includes("BG"))      this.bigIndices.push(i);
-      else if (src.includes("SM")) this.smallIndices.push(i);
+      // Route by filename convention — case-insensitive
+      const upper = src.toUpperCase();
+      if (upper.includes(" BG."))      this.bigIndices.push(i);
+      else if (upper.includes(" SM.")) this.smallIndices.push(i);
     });
 
     // Fallback: if no categorised files yet, use full list for both sizes
