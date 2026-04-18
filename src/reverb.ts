@@ -67,6 +67,18 @@ export class ReverbManager {
     }
   }
 
+  /** Play a one-shot buffer dry — bypasses reverb, goes straight to destination. */
+  playDry(buffer: AudioBuffer, volume = 1): void {
+    if (!this.ctx) return;
+    const src  = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    const gain = this.ctx.createGain();
+    gain.gain.value = volume;
+    src.connect(gain);
+    gain.connect(this.ctx.destination);
+    src.start();
+  }
+
   /** Play a one-shot buffer through the dry/wet reverb chain. */
   playOneShot(buffer: AudioBuffer, volume = 1): void {
     if (!this.ctx) return;

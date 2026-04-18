@@ -2,11 +2,7 @@ import {
   createComponent,
   createSystem,
   Types,
-  AudioSource,
-  AudioUtils,
-  PlaybackMode,
   Vector3,
-  Group,
   Entity,
   Mesh,
   RingGeometry,
@@ -16,6 +12,8 @@ import {
   DoubleSide,
   VisibilityState,
 } from "@iwsdk/core";
+
+import { reverbManager } from "./reverb.js";
 
 // Singing-bowl recordings — "BG" suffix = big bubbles, "SM" suffix = small bubbles
 const BUBBLE_SRCS = [
@@ -91,9 +89,10 @@ export class BubbleSystem extends createSystem({
   private tipRight     = new Vector3();
   private headWorldPos = new Vector3();
 
-  private soundEntities: Entity[]  = [];
-  private wavePool:      WaveRing[] = [];
-  private respawnTimers: number[]   = [];
+  private soundBuffers: (AudioBuffer | null)[] = new Array(BUBBLE_SRCS.length).fill(null);
+  private buffersLoading = false;
+  private wavePool:       WaveRing[] = [];
+  private respawnTimers:  number[]   = [];
 
   // Sound index pools split by BG / SM naming convention
   private bigIndices:   number[] = [];
@@ -102,18 +101,8 @@ export class BubbleSystem extends createSystem({
   private prevEnabled = true;
 
   init() {
-    // ─ Sound entities ──────────────────────────────────────────────────────
+    // ─ Build BG / SM index pools ───────────────────────────────────────────
     BUBBLE_SRCS.forEach((src, i) => {
-      const e = this.world.createTransformEntity(new Group());
-      e.addComponent(AudioSource, {
-        src,
-        positional:   false,
-        volume:       0.7,
-        playbackMode: PlaybackMode.Overlap,
-      });
-      this.soundEntities.push(e);
-
-      // Route by filename convention — case-insensitive
       const upper = src.toUpperCase();
       if (upper.includes(" BG."))      this.bigIndices.push(i);
       else if (upper.includes(" SM.")) this.smallIndices.push(i);
@@ -222,6 +211,14 @@ export class BubbleSystem extends createSystem({
   // ── update ────────────────────────────────────────────────────────────────
 
   update(_delta: number, _time: number) {
+    // ─ Lazy-load buffers once reverb AudioContext is ready ───────────────
+    if (!this.buffersLoading && reverbManager.audioContext) {
+      this.buffersLoading = true;
+      BUBBLE_SRCS.forEach((src, i) => {
+        reverbManager.loadBuffer(src).then((buf) => { this.soundBuffers[i] = buf; });
+      });
+    }
+
     // ─ Toggle handling ───────────────────────────────────────────────────
     if (!bubbleManager.enabled) {
       if (this.prevEnabled) {
@@ -289,8 +286,9 @@ export class BubbleSystem extends createSystem({
         this.tipLeft.distanceTo(mesh.position)  < popDist ||
         this.tipRight.distanceTo(mesh.position) < popDist
       ) {
-        const si = entity.getValue(BubbleOrigin, "soundIndex") as number;
-        AudioUtils.play(this.soundEntities[si]);
+        const si  = entity.getValue(BubbleOrigin, "soundIndex") as number;
+        const buf = this.soundBuffers[si];
+        if (buf) reverbManager.playDry(buf, 0.7);
         this.triggerWave(mesh.position, nowSec, radius);
         document.dispatchEvent(
           new CustomEvent("bubble-pop", { detail: { position: mesh.position.clone() } }),
