@@ -13,7 +13,7 @@ import {
 
 import { Handpan } from "./handpan.js";
 
-export const productInfoManager = { enabled: false };
+export const productInfoManager = { enabled: true };
 
 const PROXIMITY_DIST = 1.5;  // metres — panel only shows within this range
 const PANEL_OFFSET_X = 0.55; // world-right offset from handpan centre
@@ -38,7 +38,7 @@ export class ProductInfoSystem extends createSystem({
 
     this.panelEntity = this.world.createTransformEntity(group, { parent: this.world.sceneEntity });
     this.panelEntity.addComponent(PanelUI, {
-      config:    "./ui/product-info.json",
+      config:    "./ui/productinfo.json",
       maxWidth:  0.45,
       maxHeight: 0.50,
     });

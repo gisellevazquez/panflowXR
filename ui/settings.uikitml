@@ -206,7 +206,7 @@
   <!-- ── Product info ──────────────────────────────────────────── -->
   <div class="ambient-section">
     <span class="section-label">Product Info</span>
-    <button class="ambient-btn" id="product-info-toggle">Off</button>
+    <button class="ambient-btn ambient-active" id="product-info-toggle">On</button>
   </div>
 
 </div>

@@ -98,7 +98,7 @@ export class BubbleSystem extends createSystem({
   private bigIndices:   number[] = [];
   private smallIndices: number[] = [];
 
-  private prevEnabled = true;
+  private prevEnabled = false; // matches bubbleManager.enabled initial state
 
   init() {
     // ─ Build BG / SM index pools ───────────────────────────────────────────
@@ -131,7 +131,7 @@ export class BubbleSystem extends createSystem({
 
     // ─ Initial spawn — wait for XR session so player.head is real ─────────
     const spawnInitial = () => {
-      if (this.queries.bubbles.entities.size === 0) {
+      if (this.queries.bubbles.entities.size === 0 && bubbleManager.enabled) {
         for (let i = 0; i < BUBBLE_TARGET; i++) this.spawnBubble();
       }
     };
