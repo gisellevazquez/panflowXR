@@ -1,0 +1,167 @@
+<style>
+  .card {
+    width: 52;
+    padding: 2.5;
+    background-color: #09090b;
+    border-color: #27272a;
+    border-width: 0.15;
+    border-radius: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 1.8;
+  }
+
+  /* ── Name block ───────────────────────────────────────────── */
+  .name-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6;
+  }
+
+  .label {
+    font-size: 2;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: #52525b;
+    font-weight: 500;
+  }
+
+  .product-name {
+    font-size: 5.2;
+    font-weight: 900;
+    color: #fafafa;
+    line-height: 1;
+    margin: 0;
+  }
+
+  .tagline {
+    font-size: 2.2;
+    color: #71717a;
+    font-style: italic;
+    margin: 0;
+  }
+
+  /* ── Divider ─────────────────────────────────────────────── */
+  .divider {
+    height: 0.12;
+    background-color: #27272a;
+  }
+
+  /* ── Price ───────────────────────────────────────────────── */
+  .price-row {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .price {
+    font-size: 6.5;
+    font-weight: 800;
+    color: #93c5fd;
+    letter-spacing: -0.02em;
+  }
+
+  .avail {
+    font-size: 2;
+    color: #4a7a5c;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ── Specs ───────────────────────────────────────────────── */
+  .specs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7;
+  }
+
+  .spec {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .spec-label {
+    font-size: 2;
+    color: #52525b;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .spec-val {
+    font-size: 2.2;
+    color: #a1a1aa;
+    font-weight: 500;
+  }
+
+  /* ── Options ─────────────────────────────────────────────── */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8;
+  }
+
+  .opt-btn {
+    padding: 1.5;
+    background-color: #18181b;
+    border-color: #27272a;
+    border-width: 0.12;
+    border-radius: 2;
+    color: #a1a1aa;
+    font-size: 2.2;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .opt-btn:hover {
+    background-color: #1e3a5f;
+    border-color: #3b82f6;
+    color: #93c5fd;
+  }
+</style>
+
+<div class="card">
+
+  <!-- ── Name ──────────────────────────────────────────────── -->
+  <div class="name-block">
+    <span class="label">Handpan</span>
+    <span class="product-name">Panflow D Kurd</span>
+    <span class="tagline">Touch every note before you buy</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Price ─────────────────────────────────────────────── -->
+  <div class="price-row">
+    <span class="price">€1,890</span>
+    <span class="avail">In stock</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Specs ─────────────────────────────────────────────── -->
+  <div class="specs">
+    <div class="spec">
+      <span class="spec-label">Scale</span>
+      <span class="spec-val">D Kurd 9-note</span>
+    </div>
+    <div class="spec">
+      <span class="spec-label">Material</span>
+      <span class="spec-val">Nitrided steel</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Options ───────────────────────────────────────────── -->
+  <div class="options">
+    <button class="opt-btn" id="btn-color">Customize color</button>
+    <button class="opt-btn" id="btn-scale">Choose scale</button>
+    <button class="opt-btn" id="btn-demo">Request demo</button>
+  </div>
+
+</div>

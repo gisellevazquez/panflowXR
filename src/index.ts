@@ -18,6 +18,7 @@ import { BubbleSystem }           from "./bubbles.js";
 import { reverbManager }          from "./reverb.js";
 import { ambientManager }         from "./ambient.js";
 import { MenuSystem }             from "./ui.js";
+import { ProductInfoSystem }      from "./product-info.js";
 
 const assets: AssetManifest = {
   handpan: { url: "./gltf/handpan/hand_pan.glb", type: AssetType.GLTF, priority: "critical" },
@@ -138,4 +139,5 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   world.registerSystem(HandpanSystem);
   world.registerSystem(BubbleSystem);
   world.registerSystem(MenuSystem);
+  world.registerSystem(ProductInfoSystem);
 });

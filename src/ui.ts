@@ -16,7 +16,8 @@ import {
 
 import { reverbManager }  from "./reverb.js";
 import { ambientManager, AmbientType } from "./ambient.js";
-import { bubbleManager } from "./bubbles.js";
+import { bubbleManager }      from "./bubbles.js";
+import { productInfoManager } from "./product-info.js";
 
 const REVERB_STEP      = 0.1;
 const AMBIENT_VOL_STEP = 0.05;
@@ -264,6 +265,19 @@ export class MenuSystem extends createSystem({
           bubbleBtn.setProperties({ text: "On",  backgroundColor: 0x1e3a5f, borderColor: 0x3b82f6, color: 0x93c5fd });
         } else {
           bubbleBtn.setProperties({ text: "Off", backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0xa1a1aa });
+        }
+      }
+    });
+
+    // ─ Product info toggle ─────────────────────────────────────────────────
+    const productInfoBtn = doc.getElementById("product-info-toggle") as any;
+    doc.getElementById("product-info-toggle")?.addEventListener("click", () => {
+      productInfoManager.enabled = !productInfoManager.enabled;
+      if (productInfoBtn) {
+        if (productInfoManager.enabled) {
+          productInfoBtn.setProperties({ text: "On",  backgroundColor: 0x1e3a5f, borderColor: 0x3b82f6, color: 0x93c5fd });
+        } else {
+          productInfoBtn.setProperties({ text: "Off", backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0xa1a1aa });
         }
       }
     });

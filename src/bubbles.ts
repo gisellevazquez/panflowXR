@@ -79,7 +79,7 @@ export const BubbleOrigin = createComponent("BubbleOrigin", {
 });
 
 /** Toggle bubbles on/off from the menu. */
-export const bubbleManager = { enabled: true };
+export const bubbleManager = { enabled: false };
 
 // ── System ────────────────────────────────────────────────────────────────────
 export class BubbleSystem extends createSystem({
