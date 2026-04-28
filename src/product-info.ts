@@ -40,7 +40,7 @@ export class ProductInfoSystem extends createSystem({
     this.panelEntity.addComponent(PanelUI, {
       config:    "./ui/productinfo.json",
       maxWidth:  0.45,
-      maxHeight: 0.50,
+      maxHeight: 0.90,
     });
 
     // Add interactables once XR is active
