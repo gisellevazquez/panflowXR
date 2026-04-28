@@ -216,29 +216,28 @@ export class MenuSystem extends createSystem({
       });
     }
 
-    // ─ Ambient volume — segmented interactive bar ──────────────────────────
-    const volDisplay = doc.getElementById("ambient-vol-display") as any;
-    const SEG_COUNT  = 10;
+    // ─ Ambient volume — fill+thumb slider (tap fill=down, tap empty=up) ──────
+    const volDisplay  = doc.getElementById("ambient-vol-display") as any;
+    const ambientFill = doc.getElementById("ambient-vol-down")    as any; // fill IS the down-btn
+    const AMBIENT_FILL_MAX = 30;
 
     const updateAmbientVolUI = () => {
       const pct = Math.round(ambientManager.volume * 100);
       volDisplay?.setProperties({ text: `${pct}%` });
-      for (let i = 1; i <= SEG_COUNT; i++) {
-        const seg = doc.getElementById(`seg-${i * 10}`) as any;
-        if (!seg) continue;
-        seg.setProperties({ backgroundColor: (i * 10) <= pct ? 0x22c55e : 0x27272a });
-      }
+      ambientFill?.setProperties({ width: Math.round(ambientManager.volume * AMBIENT_FILL_MAX) });
     };
 
     updateAmbientVolUI();
 
-    for (let i = 1; i <= SEG_COUNT; i++) {
-      const value = i / SEG_COUNT;
-      doc.getElementById(`seg-${i * 10}`)?.addEventListener("click", () => {
-        ambientManager.setVolume(value);
-        updateAmbientVolUI();
-      });
-    }
+    doc.getElementById("ambient-vol-down")?.addEventListener("click", () => {
+      ambientManager.setVolume(Math.max(0, ambientManager.volume - 0.10));
+      updateAmbientVolUI();
+    });
+
+    doc.getElementById("ambient-vol-up")?.addEventListener("click", () => {
+      ambientManager.setVolume(Math.min(1, ambientManager.volume + 0.10));
+      updateAmbientVolUI();
+    });
 
     // ─ Ambient type buttons ────────────────────────────────────────────────
     const AMBIENT_TYPES: AmbientType[] = ["none", "rain", "forest", "ocean", "wind"];

@@ -136,6 +136,8 @@
     height: 0.5;
     background-color: #27272a;
     border-radius: 0.25;
+    border-width: 0;
+    cursor: pointer;
   }
 
   /* ── Reverb preset buttons ────────────────────────────────── */
@@ -163,23 +165,21 @@
     color: #fafafa;
   }
 
-  /* ── Ambient volume — segmented interactive bar ───────────── */
-  .seg-track {
-    flex-grow: 1;
-    height: 2.2;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.4;
+  .fill-green {
+    height: 0.5;
+    background-color: #22c55e;
+    border-radius: 0.25;
+    width: 0;
+    border-width: 0;
+    cursor: pointer;
   }
 
-  .seg {
-    flex-grow: 1;
-    height: 0.7;
-    border-radius: 0.35;
-    background-color: #27272a;
-    cursor: pointer;
-    border-width: 0;
+  .thumb-green {
+    width: 2.2;
+    height: 2.2;
+    border-radius: 1.1;
+    background-color: #4ade80;
+    flex-shrink: 0;
   }
 
   /* ── Ambient type buttons ─────────────────────────────────── */
@@ -310,17 +310,10 @@
     </div>
     <div class="slider-row">
       <span class="edge-lbl">Off</span>
-      <div class="seg-track">
-        <button class="seg" id="seg-10"></button>
-        <button class="seg" id="seg-20"></button>
-        <button class="seg" id="seg-30"></button>
-        <button class="seg" id="seg-40"></button>
-        <button class="seg" id="seg-50"></button>
-        <button class="seg" id="seg-60"></button>
-        <button class="seg" id="seg-70"></button>
-        <button class="seg" id="seg-80"></button>
-        <button class="seg" id="seg-90"></button>
-        <button class="seg" id="seg-100"></button>
+      <div class="track">
+        <button class="fill-green" id="ambient-vol-down"></button>
+        <div class="thumb-green" id="ambient-thumb"></div>
+        <button class="track-empty" id="ambient-vol-up"></button>
       </div>
       <span class="edge-lbl">Loud</span>
     </div>
