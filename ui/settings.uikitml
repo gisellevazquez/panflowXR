@@ -1,18 +1,18 @@
 <style>
-  /* ── Root panel ───────────────────────────────────────────────── */
+  /* ── Root panel ───────────────────────────────────────────── */
   .panel {
-    width: 52;
-    padding: 2.5;
-    background-color: #09090b;
-    border-color: #27272a;
+    width: 54;
+    padding: 3;
+    background-color: #0a0a0f;
+    border-color: #1c1c2e;
     border-width: 0.15;
-    border-radius: 3;
+    border-radius: 3.5;
     display: flex;
     flex-direction: column;
     gap: 2;
   }
 
-  /* ── Header row ───────────────────────────────────────────────── */
+  /* ── Header ───────────────────────────────────────────────── */
   .header {
     display: flex;
     flex-direction: row;
@@ -20,104 +20,169 @@
     align-items: center;
   }
 
-  .title {
-    font-size: 3.8;
-    font-weight: medium;
-    color: #fafafa;
+  .header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4;
+  }
+
+  .exp-label {
+    font-size: 1.8;
+    color: #6366f1;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+  }
+
+  .main-title {
+    font-size: 5.5;
+    font-weight: 900;
+    color: #ffffff;
   }
 
   #close-btn {
-    width: 7;
-    height: 7;
-    padding: 0;
-    background-color: #27272a;
-    border-radius: 3.5;
+    width: 8;
+    height: 8;
+    background-color: #1c1c2e;
+    border-radius: 4;
     border-width: 0;
-    color: #a1a1aa;
+    color: #6b7280;
     font-size: 3;
     text-align: center;
     cursor: pointer;
   }
 
   #close-btn:hover {
-    background-color: #3f3f46;
+    background-color: #2d2d44;
     color: #fafafa;
   }
 
-  /* ── Divider ──────────────────────────────────────────────────── */
+  /* ── Divider ──────────────────────────────────────────────── */
   .divider {
-    height: 0.15;
-    background-color: #27272a;
+    height: 0.12;
+    background-color: #1c1c2e;
   }
 
-  /* ── Section label ────────────────────────────────────────────── */
-  .section-label {
-    font-size: 2.4;
-    color: #a1a1aa;
-    font-weight: medium;
-    margin-bottom: 0.5;
-  }
-
-  /* ── Reverb control ───────────────────────────────────────────── */
-  .reverb-section {
+  /* ── Section ──────────────────────────────────────────────── */
+  .section {
     display: flex;
     flex-direction: column;
-    gap: 1;
+    gap: 1.5;
   }
 
-  .reverb-row {
+  .section-row {
     display: flex;
     flex-direction: row;
-    align-items: center;
     justify-content: space-between;
-    gap: 1;
+    align-items: center;
   }
 
-  .reverb-edge-label {
-    font-size: 2;
-    color: #52525b;
-    width: 10;
+  .section-name {
+    font-size: 3.2;
+    font-weight: 700;
+    color: #fafafa;
   }
 
-  .reverb-controls {
+  .pct-purple {
+    font-size: 3.2;
+    font-weight: 700;
+    color: #a78bfa;
+  }
+
+  .pct-green {
+    font-size: 3.2;
+    font-weight: 700;
+    color: #4ade80;
+  }
+
+  /* ── Slider row (Reverb — decorative) ────────────────────── */
+  .slider-row {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 1.5;
   }
 
-  .reverb-btn {
-    width: 7;
-    height: 7;
-    padding: 0;
+  .edge-lbl {
+    font-size: 1.8;
+    color: #4b5563;
+    width: 6;
+  }
+
+  .track {
+    flex-grow: 1;
+    height: 2.2;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .fill-purple {
+    height: 0.5;
+    background-color: #7c3aed;
+    border-radius: 0.25;
+    width: 0;
+  }
+
+  .thumb-purple {
+    width: 2.2;
+    height: 2.2;
+    border-radius: 1.1;
+    background-color: #8b5cf6;
+    flex-shrink: 0;
+  }
+
+  .track-empty {
+    flex-grow: 1;
+    height: 0.5;
+    background-color: #27272a;
+    border-radius: 0.25;
+  }
+
+  /* ── Reverb preset buttons ────────────────────────────────── */
+  .preset-row {
+    display: flex;
+    flex-direction: row;
+    gap: 1;
+  }
+
+  .preset-btn {
+    flex-grow: 1;
+    padding: 1.4;
     background-color: #18181b;
     border-color: #27272a;
     border-width: 0.12;
-    border-radius: 3.5;
-    color: #fafafa;
-    font-size: 4;
+    border-radius: 2;
+    color: #6b7280;
+    font-size: 2.3;
     text-align: center;
     cursor: pointer;
   }
 
-  .reverb-btn:hover {
-    background-color: #3f3f46;
-  }
-
-  #reverb-display {
-    font-size: 2.8;
+  .preset-btn:hover {
+    background-color: #27272a;
     color: #fafafa;
-    text-align: center;
-    width: 12;
   }
 
-  /* ── Ambient sound ────────────────────────────────────────────── */
-  .ambient-section {
+  /* ── Ambient volume — segmented interactive bar ───────────── */
+  .seg-track {
+    flex-grow: 1;
+    height: 2.2;
     display: flex;
-    flex-direction: column;
-    gap: 1;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4;
   }
 
+  .seg {
+    flex-grow: 1;
+    height: 0.7;
+    border-radius: 0.35;
+    background-color: #27272a;
+    cursor: pointer;
+    border-width: 0;
+  }
+
+  /* ── Ambient type buttons ─────────────────────────────────── */
   .ambient-grid {
     display: flex;
     flex-direction: column;
@@ -130,7 +195,7 @@
     border-color: #27272a;
     border-width: 0.12;
     border-radius: 2;
-    color: #a1a1aa;
+    color: #6b7280;
     font-size: 2.4;
     cursor: pointer;
   }
@@ -141,48 +206,123 @@
   }
 
   .ambient-active {
-    background-color: #1e3a5f;
-    border-color: #3b82f6;
-    color: #93c5fd;
+    background-color: #052e16;
+    border-color: #22c55e;
+    color: #4ade80;
+  }
+
+  /* ── Toggle row ───────────────────────────────────────────── */
+  .toggle-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3;
+  }
+
+  .toggle-title {
+    font-size: 3.2;
+    font-weight: 700;
+    color: #fafafa;
+  }
+
+  .toggle-sub {
+    font-size: 2;
+    color: #52525b;
+  }
+
+  /* Toggle pill — [space][knob] → OFF: space=0 so knob left;
+                                    ON: space grows so knob right */
+  .toggle-pill {
+    width: 12;
+    height: 6;
+    border-radius: 3;
+    background-color: #27272a;
+    border-width: 0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0.75;
+  }
+
+  .toggle-knob {
+    width: 4.5;
+    height: 4.5;
+    border-radius: 2.25;
+    background-color: #52525b;
+    flex-shrink: 0;
+  }
+
+  .toggle-space {
+    height: 0.1;
   }
 </style>
 
 <div class="panel">
-  <!-- ── Header ───────────────────────────────────────────────── -->
+
+  <!-- ── Header ───────────────────────────────────────────── -->
   <div class="header">
-    <span class="title">PanFlow</span>
+    <div class="header-text">
+      <span class="exp-label">EXPERIENCE</span>
+      <span class="main-title">Settings</span>
+    </div>
     <button id="close-btn">X</button>
   </div>
 
   <div class="divider"></div>
 
-  <!-- ── Reverb ───────────────────────────────────────────────── -->
-  <div class="reverb-section">
-    <span class="section-label">Reverb</span>
-    <div class="reverb-row">
-      <span class="reverb-edge-label">Dry</span>
-      <div class="reverb-controls">
-        <button class="reverb-btn" id="reverb-down">-</button>
-        <span id="reverb-display">0%</span>
-        <button class="reverb-btn" id="reverb-up">+</button>
+  <!-- ── Reverb ───────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-row">
+      <span class="section-name">Reverb</span>
+      <span class="pct-purple" id="reverb-display">0%</span>
+    </div>
+    <div class="slider-row">
+      <span class="edge-lbl">Dry</span>
+      <div class="track">
+        <div class="fill-purple" id="reverb-fill"></div>
+        <div class="thumb-purple"></div>
+        <div class="track-empty"></div>
       </div>
-      <span class="reverb-edge-label">Cathedral</span>
+      <span class="edge-lbl">Wet</span>
+    </div>
+    <div class="preset-row">
+      <button class="preset-btn" id="preset-room">Room</button>
+      <button class="preset-btn" id="preset-hall">Hall</button>
+      <button class="preset-btn" id="preset-cathedral">Cathedral</button>
+      <button class="preset-btn" id="preset-cavern">Cavern</button>
     </div>
   </div>
 
   <div class="divider"></div>
 
-  <!-- ── Ambient sound ────────────────────────────────────────── -->
-  <div class="ambient-section">
-    <span class="section-label">Ambient Sound</span>
-    <div class="reverb-row">
-      <span class="reverb-edge-label">Off</span>
-      <div class="reverb-controls">
-        <button class="reverb-btn" id="ambient-vol-down">-</button>
-        <span id="ambient-vol-display">15%</span>
-        <button class="reverb-btn" id="ambient-vol-up">+</button>
+  <!-- ── Ambient Sound ────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-row">
+      <span class="section-name">Ambient Sound</span>
+      <span class="pct-green" id="ambient-vol-display">15%</span>
+    </div>
+    <div class="slider-row">
+      <span class="edge-lbl">Off</span>
+      <div class="seg-track">
+        <button class="seg" id="seg-10"></button>
+        <button class="seg" id="seg-20"></button>
+        <button class="seg" id="seg-30"></button>
+        <button class="seg" id="seg-40"></button>
+        <button class="seg" id="seg-50"></button>
+        <button class="seg" id="seg-60"></button>
+        <button class="seg" id="seg-70"></button>
+        <button class="seg" id="seg-80"></button>
+        <button class="seg" id="seg-90"></button>
+        <button class="seg" id="seg-100"></button>
       </div>
-      <span class="reverb-edge-label">Loud</span>
+      <span class="edge-lbl">Loud</span>
     </div>
     <div class="ambient-grid">
       <button class="ambient-btn ambient-active" id="ambient-none">None</button>
@@ -195,18 +335,30 @@
 
   <div class="divider"></div>
 
-  <!-- ── Bubbles ─────────────────────────────────────────────────── -->
-  <div class="ambient-section">
-    <span class="section-label">Bubbles</span>
-    <button class="ambient-btn" id="bubble-toggle">Off</button>
+  <!-- ── Bubbles ───────────────────────────────────────────── -->
+  <div class="toggle-row">
+    <div class="toggle-text">
+      <span class="toggle-title">Bubbles</span>
+      <span class="toggle-sub">Floating particle effect</span>
+    </div>
+    <button class="toggle-pill" id="bubble-toggle">
+      <div class="toggle-space" id="bubble-space"></div>
+      <div class="toggle-knob" id="bubble-knob"></div>
+    </button>
   </div>
 
   <div class="divider"></div>
 
-  <!-- ── Product info ──────────────────────────────────────────── -->
-  <div class="ambient-section">
-    <span class="section-label">Product Info</span>
-    <button class="ambient-btn ambient-active" id="product-info-toggle">On</button>
+  <!-- ── Product Info ──────────────────────────────────────── -->
+  <div class="toggle-row">
+    <div class="toggle-text">
+      <span class="toggle-title">Product Info</span>
+      <span class="toggle-sub">Handpan info panel</span>
+    </div>
+    <button class="toggle-pill" id="product-info-toggle">
+      <div class="toggle-space" id="product-space"></div>
+      <div class="toggle-knob" id="product-knob"></div>
+    </button>
   </div>
 
 </div>

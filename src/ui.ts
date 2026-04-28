@@ -19,8 +19,17 @@ import { ambientManager, AmbientType } from "./ambient.js";
 import { bubbleManager }      from "./bubbles.js";
 import { productInfoManager } from "./product-info.js";
 
-const REVERB_STEP      = 0.1;
-const AMBIENT_VOL_STEP = 0.05;
+// Reverb preset values (wet mix 0–1)
+const REVERB_PRESETS: Record<string, number> = {
+  "preset-room":      0.20,
+  "preset-hall":      0.40,
+  "preset-cathedral": 0.65,
+  "preset-cavern":    0.90,
+};
+
+// Max fill width in UIKITML units for the decorative reverb slider.
+// Track flex-grows to ~33 units inside the slider-row; thumb is 2.2.
+const REVERB_FILL_MAX = 30;
 
 /**
  * MenuSystem — floating settings panel anchored above the left wrist.
@@ -28,12 +37,6 @@ const AMBIENT_VOL_STEP = 0.05;
  * Open / close:
  *   - Emulator / controller:  Y button (left controller)
  *   - Headset hand-tracking:  hold left pinch (Trigger) for 1.5 s
- *
- * Visibility strategy:
- *   The Three.js Group is ALWAYS visible so raycasting / PokeInteractable
- *   keep working across open/close cycles. Show/hide is done via UIKit's own
- *   display property (display:'flex' | 'none') on the root element, which
- *   makes UIKit hide its meshes without touching Three.js visibility.
  */
 export class MenuSystem extends createSystem({
   configuredPanels: { required: [PanelUI, PanelDocument] },
@@ -46,9 +49,6 @@ export class MenuSystem extends createSystem({
   private readonly TOGGLE_HOLD_SEC      = 1.5;
 
   init() {
-    // ─ Create panel entity ────────────────────────────────────────────────
-    // Start hidden via Three.js until the UIKitDocument loads; after that
-    // we keep object3D.visible = true and use UIKit display:none instead.
     const group = new Group();
     group.visible = false;
 
@@ -57,10 +57,9 @@ export class MenuSystem extends createSystem({
     this.panelEntity.addComponent(PanelUI, {
       config:    "./ui/settings.json",
       maxWidth:  0.45,
-      maxHeight: 0.70,
+      maxHeight: 1.0,
     });
 
-    // Keep panel above the left wrist while hidden
     this.panelEntity.addComponent(Follower, {
       target:          this.player.gripSpaces.left,
       offsetPosition:  [0, 0.20, 0.05] as [number, number, number],
@@ -69,7 +68,6 @@ export class MenuSystem extends createSystem({
       tolerance:       0.06,
     });
 
-    // Add interactables only once the XR session is active
     this.cleanupFuncs.push(
       this.world.visibilityState.subscribe((state) => {
         if (state === VisibilityState.Visible && this.panelEntity) {
@@ -95,13 +93,11 @@ export class MenuSystem extends createSystem({
   }
 
   update(delta: number, _time: number) {
-    // Controller / emulator: Y button (instant)
     if (this.input.gamepads.left?.getButtonDown(InputComponent.Y_Button)) {
       this._toggle();
       return;
     }
 
-    // Hand tracking: hold left pinch for 1.5 s
     const pinching = this.input.gamepads.left?.getButtonPressed(InputComponent.Trigger) ?? false;
     if (pinching) {
       this.pinchHeldSec += delta;
@@ -120,24 +116,19 @@ export class MenuSystem extends createSystem({
     this.panelVisible = !this.panelVisible;
 
     if (this.panelDoc) {
-      // UIKit display toggle — keeps Three.js Group alive so raycasting
-      // and interaction handlers survive across open/close cycles.
       (this.panelDoc.rootElement as any).setProperties({
         display: this.panelVisible ? "flex" : "none",
       });
     } else {
-      // Fallback before document loads
       if (this.panelEntity?.object3D) {
         this.panelEntity.object3D.visible = this.panelVisible;
       }
     }
 
     if (this.panelVisible) {
-      // Freeze panel at current (wrist) position
       if (this.panelEntity?.hasComponent(Follower)) {
         this.panelEntity.removeComponent(Follower);
       }
-      // Rotate panel to face the player's head (only Y-axis, keeps panel upright)
       const obj = this.panelEntity?.object3D;
       if (obj && this.player.head) {
         const headPos = new Vector3();
@@ -146,7 +137,6 @@ export class MenuSystem extends createSystem({
         obj.lookAt(headPos);
       }
     } else {
-      // Re-attach Follower so panel silently tracks wrist while hidden
       const target = this.player.gripSpaces?.left;
       if (this.panelEntity && !this.panelEntity.hasComponent(Follower) && target) {
         this.panelEntity.addComponent(Follower, {
@@ -176,14 +166,11 @@ export class MenuSystem extends createSystem({
     this.documentWiredUp = true;
     this.panelDoc = doc;
 
-    // Switch from Three.js visibility to UIKit display management.
-    // Group stays visible=true from now on; content is hidden via display:none.
     if (this.panelEntity?.object3D) {
       this.panelEntity.object3D.visible = true;
     }
     (doc.rootElement as any).setProperties({ display: "none" });
 
-    // Make panel double-sided (UIKit builds geometry async — wait before traversing)
     setTimeout(() => {
       this.panelEntity?.object3D?.traverse((obj: any) => {
         if (obj.isMesh && obj.material) {
@@ -198,43 +185,62 @@ export class MenuSystem extends createSystem({
       this._toggle();
     });
 
-    // ─ Reverb controls ─────────────────────────────────────────────────────
-    const display = doc.getElementById("reverb-display");
+    // ─ Reverb — decorative slider + preset buttons ─────────────────────────
+    const reverbDisplay = doc.getElementById("reverb-display") as any;
+    const reverbFill    = doc.getElementById("reverb-fill")    as any;
 
-    const updateDisplay = () => {
-      const pct = Math.round(reverbManager.wet * 100);
-      if (display) (display as any).setProperties({ text: `${pct}%` });
+    const updateReverbUI = (wet: number) => {
+      reverbDisplay?.setProperties({ text: `${Math.round(wet * 100)}%` });
+      reverbFill?.setProperties({ width: Math.round(wet * REVERB_FILL_MAX) });
     };
 
-    doc.getElementById("reverb-down")?.addEventListener("click", () => {
-      reverbManager.setWet(Math.max(0, reverbManager.wet - REVERB_STEP));
-      updateDisplay();
-    });
+    updateReverbUI(reverbManager.wet);
 
-    doc.getElementById("reverb-up")?.addEventListener("click", () => {
-      reverbManager.setWet(Math.min(1, reverbManager.wet + REVERB_STEP));
-      updateDisplay();
-    });
+    const setActivePreset = (activeId: string | null) => {
+      for (const id of Object.keys(REVERB_PRESETS)) {
+        const btn = doc.getElementById(id) as any;
+        if (!btn) continue;
+        if (id === activeId) {
+          btn.setProperties({ backgroundColor: 0x1e1b4b, borderColor: 0x6366f1, color: 0xa5b4fc });
+        } else {
+          btn.setProperties({ backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0x6b7280 });
+        }
+      }
+    };
 
-    // ─ Ambient volume ──────────────────────────────────────────────────────
-    const volDisplay = doc.getElementById("ambient-vol-display");
+    for (const [id, wet] of Object.entries(REVERB_PRESETS)) {
+      doc.getElementById(id)?.addEventListener("click", () => {
+        reverbManager.setWet(wet);
+        updateReverbUI(wet);
+        setActivePreset(id);
+      });
+    }
 
-    const updateVolDisplay = () => {
+    // ─ Ambient volume — segmented interactive bar ──────────────────────────
+    const volDisplay = doc.getElementById("ambient-vol-display") as any;
+    const SEG_COUNT  = 10;
+
+    const updateAmbientVolUI = () => {
       const pct = Math.round(ambientManager.volume * 100);
-      if (volDisplay) (volDisplay as any).setProperties({ text: `${pct}%` });
+      volDisplay?.setProperties({ text: `${pct}%` });
+      for (let i = 1; i <= SEG_COUNT; i++) {
+        const seg = doc.getElementById(`seg-${i * 10}`) as any;
+        if (!seg) continue;
+        seg.setProperties({ backgroundColor: (i * 10) <= pct ? 0x22c55e : 0x27272a });
+      }
     };
 
-    doc.getElementById("ambient-vol-down")?.addEventListener("click", () => {
-      ambientManager.setVolume(Math.max(0, ambientManager.volume - AMBIENT_VOL_STEP));
-      updateVolDisplay();
-    });
+    updateAmbientVolUI();
 
-    doc.getElementById("ambient-vol-up")?.addEventListener("click", () => {
-      ambientManager.setVolume(Math.min(1, ambientManager.volume + AMBIENT_VOL_STEP));
-      updateVolDisplay();
-    });
+    for (let i = 1; i <= SEG_COUNT; i++) {
+      const value = i / SEG_COUNT;
+      doc.getElementById(`seg-${i * 10}`)?.addEventListener("click", () => {
+        ambientManager.setVolume(value);
+        updateAmbientVolUI();
+      });
+    }
 
-    // ─ Ambient sound buttons ───────────────────────────────────────────────
+    // ─ Ambient type buttons ────────────────────────────────────────────────
     const AMBIENT_TYPES: AmbientType[] = ["none", "rain", "forest", "ocean", "wind"];
 
     const setAmbientActive = (active: AmbientType) => {
@@ -242,9 +248,9 @@ export class MenuSystem extends createSystem({
         const btn = doc.getElementById(`ambient-${t}`) as any;
         if (!btn) continue;
         if (t === active) {
-          btn.setProperties({ backgroundColor: 0x1e3a5f, borderColor: 0x3b82f6, color: 0x93c5fd });
+          btn.setProperties({ backgroundColor: 0x052e16, borderColor: 0x22c55e, color: 0x4ade80 });
         } else {
-          btn.setProperties({ backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0xa1a1aa });
+          btn.setProperties({ backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0x6b7280 });
         }
       }
     };
@@ -256,31 +262,40 @@ export class MenuSystem extends createSystem({
       });
     }
 
-    // ─ Bubble toggle ───────────────────────────────────────────────────────
-    const bubbleBtn = doc.getElementById("bubble-toggle") as any;
+    // ─ Bubble toggle ──────────────────────────────────────────────────────
+    const bubblePill  = doc.getElementById("bubble-toggle") as any;
+    const bubbleKnob  = doc.getElementById("bubble-knob")   as any;
+    const bubbleSpace = doc.getElementById("bubble-space")  as any;
+
+    const setBubbleToggle = (on: boolean) => {
+      bubblePill?.setProperties ({ backgroundColor: on ? 0x14532d : 0x27272a });
+      bubbleKnob?.setProperties ({ backgroundColor: on ? 0x4ade80 : 0x52525b });
+      bubbleSpace?.setProperties({ flexGrow: on ? 1 : 0 });
+    };
+
+    setBubbleToggle(bubbleManager.enabled);
+
     doc.getElementById("bubble-toggle")?.addEventListener("click", () => {
       bubbleManager.enabled = !bubbleManager.enabled;
-      if (bubbleBtn) {
-        if (bubbleManager.enabled) {
-          bubbleBtn.setProperties({ text: "On",  backgroundColor: 0x1e3a5f, borderColor: 0x3b82f6, color: 0x93c5fd });
-        } else {
-          bubbleBtn.setProperties({ text: "Off", backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0xa1a1aa });
-        }
-      }
+      setBubbleToggle(bubbleManager.enabled);
     });
 
-    // ─ Product info toggle ─────────────────────────────────────────────────
-    const productInfoBtn = doc.getElementById("product-info-toggle") as any;
+    // ─ Product info toggle ────────────────────────────────────────────────
+    const productPill  = doc.getElementById("product-info-toggle") as any;
+    const productKnob  = doc.getElementById("product-knob")        as any;
+    const productSpace = doc.getElementById("product-space")       as any;
+
+    const setProductToggle = (on: boolean) => {
+      productPill?.setProperties ({ backgroundColor: on ? 0x14532d : 0x27272a });
+      productKnob?.setProperties ({ backgroundColor: on ? 0x4ade80 : 0x52525b });
+      productSpace?.setProperties({ flexGrow: on ? 1 : 0 });
+    };
+
+    setProductToggle(productInfoManager.enabled);
+
     doc.getElementById("product-info-toggle")?.addEventListener("click", () => {
       productInfoManager.enabled = !productInfoManager.enabled;
-      if (productInfoBtn) {
-        if (productInfoManager.enabled) {
-          productInfoBtn.setProperties({ text: "On",  backgroundColor: 0x1e3a5f, borderColor: 0x3b82f6, color: 0x93c5fd });
-        } else {
-          productInfoBtn.setProperties({ text: "Off", backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0xa1a1aa });
-        }
-      }
+      setProductToggle(productInfoManager.enabled);
     });
-
   }
 }
