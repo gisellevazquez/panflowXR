@@ -34,17 +34,17 @@ const NOTE_SRCS = [
   "./audio/handpan/8.mp3", // zone 8
 ];
 
-// Per-zone trigger radius in metres — zone 0 (Ding) gets a larger target
+// Per-zone trigger radius in metres — zone 0 (Dong) gets a larger target
 const ZONE_RADII: number[] = [
   0.18, // 0 Ding — larger
   0.15, // 1
   0.15, // 2
-  0.15, // 3
+  0.11, // 3
   0.15, // 4
-  0.15, // 5
+  0.11, // 5
   0.15, // 6
-  0.15, // 7
-  0.15, // 8
+  0.11, // 7
+  0.11, // 8
 ];
 const COOLDOWN_MS = 600;   // minimum ms between re-triggers of the same zone
 
