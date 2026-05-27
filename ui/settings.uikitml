@@ -236,6 +236,26 @@
     color: #52525b;
   }
 
+  /* ── Demo play button ────────────────────────────────────── */
+  .demo-play-btn {
+    flex-grow: 1;
+    padding: 1.8;
+    background-color: #1e1b4b;
+    border-color: #6366f1;
+    border-width: 0.12;
+    border-radius: 2;
+    color: #a5b4fc;
+    font-size: 2.8;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .demo-play-btn:hover {
+    background-color: #2d2a6e;
+    color: #c7d2fe;
+  }
+
   /* Toggle pill — [space][knob] → OFF: space=0 so knob left;
                                     ON: space grows so knob right */
   .toggle-pill {
@@ -352,6 +372,22 @@
       <div class="toggle-space" id="product-space"></div>
       <div class="toggle-knob" id="product-knob"></div>
     </button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Demo ─────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-row">
+      <span class="section-name">Demo</span>
+    </div>
+    <div class="preset-row">
+      <button class="preset-btn" id="demo-mode-free">Free</button>
+      <button class="preset-btn" id="demo-mode-guided">Guided</button>
+    </div>
+    <div class="preset-row">
+      <button class="demo-play-btn" id="demo-play">▶  Play Demo</button>
+    </div>
   </div>
 
 </div>

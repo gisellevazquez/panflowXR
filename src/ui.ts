@@ -18,6 +18,7 @@ import { reverbManager }  from "./reverb.js";
 import { ambientManager, AmbientType } from "./ambient.js";
 import { bubbleManager }      from "./bubbles.js";
 import { productInfoManager } from "./product-info.js";
+import { melodyManager, MelodyMode } from "./melody.js";
 
 // Reverb preset values (wet mix 0–1)
 const REVERB_PRESETS: Record<string, number> = {
@@ -295,6 +296,43 @@ export class MenuSystem extends createSystem({
     doc.getElementById("product-info-toggle")?.addEventListener("click", () => {
       productInfoManager.enabled = !productInfoManager.enabled;
       setProductToggle(productInfoManager.enabled);
+    });
+
+    // ─ Demo mode pills ────────────────────────────────────────────────────
+    const setDemoMode = (mode: MelodyMode) => {
+      melodyManager.mode = mode;
+      const freeBtn    = doc.getElementById("demo-mode-free")    as any;
+      const guidedBtn  = doc.getElementById("demo-mode-guided")  as any;
+      freeBtn?.setProperties(mode === "free"
+        ? { backgroundColor: 0x1e1b4b, borderColor: 0x6366f1, color: 0xa5b4fc }
+        : { backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0x6b7280 });
+      guidedBtn?.setProperties(mode === "guided"
+        ? { backgroundColor: 0x1e1b4b, borderColor: 0x6366f1, color: 0xa5b4fc }
+        : { backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0x6b7280 });
+    };
+
+    setDemoMode("free"); // default
+
+    doc.getElementById("demo-mode-free")?.addEventListener("click", () => setDemoMode("free"));
+    doc.getElementById("demo-mode-guided")?.addEventListener("click", () => setDemoMode("guided"));
+
+    // ─ Demo play / stop ───────────────────────────────────────────────────
+    const demoPlayBtn = doc.getElementById("demo-play") as any;
+
+    const setDemoBtn = (playing: boolean) => {
+      demoPlayBtn?.setProperties(playing
+        ? { text: "■  Stop", backgroundColor: 0x3f1d1d, borderColor: 0xf87171, color: 0xfca5a5 }
+        : { text: "▶  Play Demo", backgroundColor: 0x1e1b4b, borderColor: 0x6366f1, color: 0xa5b4fc });
+    };
+
+    doc.getElementById("demo-play")?.addEventListener("click", () => {
+      melodyManager.playing = !melodyManager.playing;
+      setDemoBtn(melodyManager.playing);
+    });
+
+    window.addEventListener("melody-ended", () => {
+      melodyManager.playing = false;
+      setDemoBtn(false);
     });
   }
 }

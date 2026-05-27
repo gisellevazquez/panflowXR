@@ -9,7 +9,7 @@ import {
 import { reverbManager } from "./reverb.js";
 
 // World-space offsets from the handpan centre for each of the 8 tone fields.
-const ZONE_OFFSETS: [number, number, number][] = [
+export const ZONE_OFFSETS: [number, number, number][] = [
   [ 0.076 , 0.457 , 0.009 ], // 0 Dong centre
   [ -0.557 , 0.248 , 0.278], // 1 right
   [ -0.522 , 0.249 , -0.339], // 2 right-back
@@ -44,11 +44,20 @@ const ZONE_RADII: number[] = [
   0.11, // 5
   0.15, // 6
   0.11, // 7
-  0.11, // 8
+  0.09, // 8
 ];
 const COOLDOWN_MS = 600;   // minimum ms between re-triggers of the same zone
 
 export const Handpan = createComponent("Handpan", {});
+
+/** Shared note player — populated by HandpanSystem once buffers are loaded. */
+export const handpanAudio = {
+  buffers: new Array(NOTE_SRCS.length).fill(null) as (AudioBuffer | null)[],
+  play(index: number, volume = 0.8): void {
+    const buf = this.buffers[index];
+    if (buf) reverbManager.playOneShot(buf, volume);
+  },
+};
 
 export class HandpanSystem extends createSystem({
   handpan: { required: [Handpan] },
@@ -123,6 +132,7 @@ export class HandpanSystem extends createSystem({
     NOTE_SRCS.forEach((src, i) => {
       reverbManager.loadBuffer(src).then((buf) => {
         this.noteBuffers[i] = buf;
+        handpanAudio.buffers[i] = buf;
       });
     });
   }
