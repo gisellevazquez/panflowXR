@@ -57,6 +57,33 @@
     .sb-section { padding: 10px 14px 12px; border-bottom: 1px solid #222; }
     .sb-section h2 { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
 
+    /* Instrument selector */
+    .instrument-grid { display: flex; flex-direction: column; gap: 5px; }
+    .instrument-btn {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 7px; border: 1px solid #2a2a2a;
+      background: #111; cursor: pointer; text-align: left;
+      transition: background .15s, border-color .15s;
+      width: 100%;
+    }
+    .instrument-btn.active {
+      border-color: #4a7a5c; background: #0e1f15;
+    }
+    .instrument-btn.disabled {
+      opacity: .38; cursor: not-allowed;
+    }
+    .instr-icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+    .instr-info { display: flex; flex-direction: column; gap: 2px; }
+    .instr-name { font-size: 12px; font-weight: 600; color: #ccc; }
+    .instrument-btn.active .instr-name { color: #7ec87e; }
+    .instr-sub { font-size: 10px; color: #555; letter-spacing: .04em; }
+    .instrument-btn.active .instr-sub { color: #4a7a5c; }
+    .coming-tag {
+      margin-left: auto; font-size: 9px; letter-spacing: .08em;
+      color: #3a3a3a; border: 1px solid #2a2a2a; border-radius: 4px;
+      padding: 2px 6px; white-space: nowrap; flex-shrink: 0;
+    }
+
     /* Model upload */
     .upload-row { display: flex; align-items: center; gap: 8px; }
     .upload-btn {
@@ -159,6 +186,44 @@
 
   <!-- ── Sidebar ── -->
   <div id="sidebar">
+
+    <!-- Instrument type -->
+    <div class="sb-section">
+      <h2>Instrument type</h2>
+      <div class="instrument-grid">
+        <button class="instrument-btn active" disabled>
+          <span class="instr-icon">🥁</span>
+          <div class="instr-info">
+            <span class="instr-name">Handpan</span>
+            <span class="instr-sub">9-zone percussion</span>
+          </div>
+        </button>
+        <button class="instrument-btn disabled" disabled title="Coming soon">
+          <span class="instr-icon">🪘</span>
+          <div class="instr-info">
+            <span class="instr-name">Tibetan Bowl</span>
+            <span class="instr-sub">Singing bowls</span>
+          </div>
+          <span class="coming-tag">soon</span>
+        </button>
+        <button class="instrument-btn disabled" disabled title="Coming soon">
+          <span class="instr-icon">🎸</span>
+          <div class="instr-info">
+            <span class="instr-name">Bass</span>
+            <span class="instr-sub">String instrument</span>
+          </div>
+          <span class="coming-tag">soon</span>
+        </button>
+        <button class="instrument-btn disabled" disabled title="Coming soon">
+          <span class="instr-icon">✦</span>
+          <div class="instr-info">
+            <span class="instr-name">Custom</span>
+            <span class="instr-sub">Any instrument</span>
+          </div>
+          <span class="coming-tag">soon</span>
+        </button>
+      </div>
+    </div>
 
     <!-- Model upload -->
     <div class="sb-section">
