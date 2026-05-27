@@ -91,6 +91,64 @@
     .enter-btn:hover { border-color: rgba(31,42,34,.6); background: rgba(255,255,255,.55); transform: translateY(-2px); }
     .enter-btn:hover::before { opacity: 1; }
     .enter-btn:disabled { opacity: .6; cursor: default; transform: none; }
+
+    /* ── Platform section ──────────────────────────────────────────────── */
+    .platform-section {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 20px; max-width: 520px; width: 100%;
+    }
+    .platform-rule {
+      width: 100%; display: flex; align-items: center; gap: 14px;
+    }
+    .platform-rule::before, .platform-rule::after {
+      content: ''; flex: 1; height: 1px; background: rgba(31,42,34,.18);
+    }
+    .platform-tag {
+      font-family: 'JetBrains Mono', monospace; font-size: 9px;
+      letter-spacing: .42em; text-transform: uppercase;
+      color: rgba(31,42,34,.42); font-weight: 500; white-space: nowrap;
+    }
+    .platform-headline {
+      font-family: 'Inter', sans-serif; font-size: 13px;
+      color: rgba(255,255,255,.68); text-align: center;
+      line-height: 1.65; margin: 0; font-weight: 400; max-width: 380px;
+    }
+    .pipeline {
+      display: flex; align-items: flex-end; gap: 10px;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .pipeline-step {
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+    }
+    .step-num {
+      font-family: 'JetBrains Mono', monospace; font-size: 9px;
+      color: #4a7a5c; letter-spacing: .15em; font-weight: 600;
+    }
+    .step-label {
+      font-family: 'Inter', sans-serif; font-size: 11px;
+      color: rgba(255,255,255,.6); font-weight: 500; white-space: nowrap;
+    }
+    .pipeline-sep {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      color: rgba(31,42,34,.3); padding-bottom: 2px;
+    }
+    .editor-btn {
+      appearance: none; text-decoration: none;
+      border: 1px solid rgba(31,42,34,.22); cursor: pointer;
+      font-family: 'JetBrains Mono', monospace; font-weight: 500;
+      font-size: 10px; letter-spacing: .28em; text-transform: uppercase;
+      background: rgba(255,255,255,.14); backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px); color: rgba(31,42,34,.75);
+      padding: 15px 30px; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 14px;
+      transition: all .3s cubic-bezier(.2,.7,.2,1);
+    }
+    .editor-btn:hover {
+      background: rgba(255,255,255,.26); border-color: rgba(31,42,34,.48);
+      transform: translateY(-2px);
+    }
+    .editor-btn .arrow { letter-spacing: 0; }
+
     .arrow {
       width: 22px; height: 22px; border-radius: 50%;
       border: 1px solid rgba(31,42,34,.55);
@@ -138,7 +196,7 @@
 <span class="corner tl"></span><span class="corner tr"></span>
 <span class="corner bl"></span><span class="corner br"></span>
 <div class="hud tl"><span class="dot"></span><span>PANFLOW</span></div>
-<div class="hud bl"><span class="glyph">◐ ◑ ◒ ◓</span><span>handpan resonance ready</span></div>
+<div class="hud bl"><span class="glyph">◐ ◑ ◒ ◓</span><span>XR commerce · sell smarter</span></div>
 <div class="hud br"><span>META QUEST · WEBXR</span></div>
 
 <!-- ── Landing UI ───────────────────────────────────────────────────────── -->
@@ -156,6 +214,37 @@
       <span>Enter Experience</span>
       <span class="arrow">→</span>
     </button>
+
+    <!-- ── Seller platform pitch ─────────────────────────────── -->
+    <div class="platform-section">
+      <div class="platform-rule">
+        <span class="platform-tag">For instrument brands</span>
+      </div>
+      <p class="platform-headline">
+        A complete XR commerce pipeline — upload your instrument,
+        map sound zones, and ship a fully interactive demo.
+      </p>
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <span class="step-num">01</span>
+          <span class="step-label">Upload 3D model</span>
+        </div>
+        <span class="pipeline-sep">→</span>
+        <div class="pipeline-step">
+          <span class="step-num">02</span>
+          <span class="step-label">Map sound zones</span>
+        </div>
+        <span class="pipeline-sep">→</span>
+        <div class="pipeline-step">
+          <span class="step-num">03</span>
+          <span class="step-label">Launch XR demo</span>
+        </div>
+      </div>
+      <a class="editor-btn" href="/zone-editor.html" target="_blank">
+        <span>Open Zone Editor</span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
   </main>
 </div>
 

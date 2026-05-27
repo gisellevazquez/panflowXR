@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Handpan Zone Editor</title>
+  <title>XR Zone Editor</title>
   <script type="importmap">
   {
     "imports": {
@@ -14,7 +14,6 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; background: #0d0d0d; color: #e0e0e0; font-family: system-ui, sans-serif; font-size: 13px; overflow: hidden; }
-
     #app { display: flex; height: 100vh; }
 
     /* ── Viewport ── */
@@ -27,108 +26,195 @@
       display: flex; align-items: center; justify-content: center;
       font-weight: 700; font-size: 11px; color: #000;
       border: 2px solid rgba(255,255,255,0.7);
-      pointer-events: none; display: none;
+      pointer-events: none;
     }
+
+    /* ── Drop overlay ── */
+    #drop-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.72); backdrop-filter: blur(4px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; z-index: 10;
+      border: 2px dashed #333; transition: border-color .2s;
+    }
+    #drop-overlay.drag-over { border-color: #4a7a5c; }
+    #drop-overlay p { color: #888; font-size: 12px; letter-spacing: .05em; }
+    .drop-icon { font-size: 40px; opacity: .4; }
+    .drop-btn {
+      padding: 10px 24px; border-radius: 8px; border: 1px solid #333;
+      background: #1e1e1e; color: #ccc; cursor: pointer; font-size: 12px;
+      letter-spacing: .06em; transition: background .15s;
+    }
+    .drop-btn:hover { background: #2a2a2a; }
 
     /* ── Sidebar ── */
     #sidebar {
-      width: 260px; flex-shrink: 0;
-      background: #161616; border-left: 1px solid #2a2a2a;
+      width: 280px; flex-shrink: 0;
+      background: #161616; border-left: 1px solid #222;
       display: flex; flex-direction: column; overflow-y: auto;
     }
-    #sidebar h2 { padding: 14px 16px 4px; font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: .08em; }
+
+    .sb-section { padding: 10px 14px 12px; border-bottom: 1px solid #222; }
+    .sb-section h2 { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+
+    /* Model upload */
+    .upload-row { display: flex; align-items: center; gap: 8px; }
+    .upload-btn {
+      flex-shrink: 0; padding: 6px 12px; border-radius: 6px;
+      border: 1px solid #333; background: #1e1e1e; color: #aaa;
+      cursor: pointer; font-size: 11px; white-space: nowrap; transition: background .15s;
+    }
+    .upload-btn:hover { background: #282828; color: #eee; }
+    .upload-name { flex: 1; font-size: 11px; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .upload-name.loaded { color: #6eb89a; }
 
     /* Zone grid */
-    #zone-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 8px 16px 12px; }
+    #zone-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
     .zone-btn {
-      padding: 6px 2px; border-radius: 6px; border: 2px solid transparent;
-      cursor: pointer; font-weight: 700; font-size: 12px; color: #111;
+      padding: 5px 2px; border-radius: 6px; border: 2px solid transparent;
+      cursor: pointer; font-weight: 700; font-size: 11px; color: #111;
       opacity: 0.5; transition: opacity .15s, border-color .15s, transform .1s;
+      text-align: center;
     }
-    .zone-btn:hover { opacity: 0.85; transform: scale(1.05); }
+    .zone-btn:hover { opacity: 0.85; transform: scale(1.04); }
     .zone-btn.active { opacity: 1; border-color: #fff; }
     .zone-btn.placed { opacity: 0.9; }
 
     /* Info panel */
-    #info-panel { padding: 0 16px 12px; border-bottom: 1px solid #2a2a2a; }
-    #info-panel p { color: #777; font-size: 11px; margin-bottom: 6px; }
+    .info-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+    #zone-name { font-size: 12px; color: #bbb; }
     #coords { background: #0f0f0f; border-radius: 6px; padding: 8px 10px; font-family: monospace; font-size: 12px; color: #aef; line-height: 1.7; }
-    #coords span { color: #777; }
+    #coords span { color: #555; }
 
     /* Actions */
-    #actions { display: flex; gap: 8px; padding: 10px 16px 12px; border-bottom: 1px solid #2a2a2a; }
+    #actions { display: flex; gap: 6px; }
     button.action {
       flex: 1; padding: 7px 4px; border-radius: 6px; border: 1px solid #333;
-      background: #222; color: #ccc; cursor: pointer; font-size: 12px; transition: background .15s;
+      background: #1e1e1e; color: #bbb; cursor: pointer; font-size: 11px; transition: background .15s;
     }
-    button.action:hover { background: #2e2e2e; }
-    button.action.danger { border-color: #5a1a1a; color: #ff8080; }
-    button.action.danger:hover { background: #2e1010; }
+    button.action:hover { background: #2a2a2a; }
+    button.action.danger { border-color: #4a1a1a; color: #f08080; }
+    button.action.danger:hover { background: #2a1010; }
 
-    /* Instructions */
-    #instructions { padding: 10px 16px; color: #666; font-size: 11px; line-height: 1.6; border-bottom: 1px solid #2a2a2a; }
-    #instructions strong { color: #999; }
+    /* Sound assignments */
+    .sound-upload-row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+    #sounds-count { font-size: 11px; color: #555; }
+    #sounds-count.loaded { color: #6eb89a; }
+
+    #zone-sound-list { display: flex; flex-direction: column; gap: 4px; }
+    .zone-sound-row {
+      display: flex; align-items: center; gap: 7px;
+      padding: 4px 6px; border-radius: 5px; background: #111;
+    }
+    .zs-dot {
+      width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+      font-size: 9px; font-weight: 700; color: #000;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .zs-name { font-size: 11px; color: #888; width: 36px; flex-shrink: 0; }
+    .zs-select {
+      flex: 1; background: #1a1a1a; border: 1px solid #2a2a2a;
+      border-radius: 4px; color: #bbb; font-size: 10px; padding: 3px 5px;
+      cursor: pointer; outline: none;
+    }
+    .zs-select:focus { border-color: #444; }
+    .zs-select.assigned { border-color: #3a5a3a; color: #7ec87e; }
 
     /* Export */
-    #export-section { padding: 10px 16px 16px; flex: 1; display: flex; flex-direction: column; }
-    #export-section h2 { margin-bottom: 6px; }
     #export-code {
-      flex: 1; resize: none; background: #0a0a0a; border: 1px solid #2a2a2a;
+      width: 100%; resize: none; background: #0a0a0a; border: 1px solid #222;
       border-radius: 6px; padding: 8px; color: #9dc; font-family: monospace;
-      font-size: 11px; line-height: 1.5; outline: none; min-height: 120px;
+      font-size: 10px; line-height: 1.5; outline: none; min-height: 110px;
+      max-height: 220px;
     }
     #copy-btn {
-      margin-top: 8px; padding: 8px; border-radius: 6px; border: 1px solid #333;
-      background: #1a2a1a; color: #7c7; cursor: pointer; font-size: 12px; font-weight: 600;
-      transition: background .15s;
+      width: 100%; margin-top: 7px; padding: 8px; border-radius: 6px;
+      border: 1px solid #2a3a2a; background: #162016; color: #7a9a7a;
+      cursor: pointer; font-size: 12px; font-weight: 600; transition: background .15s;
     }
-    #copy-btn:hover { background: #243024; }
-    #copy-btn.copied { background: #0f3020; color: #4e4; }
+    #copy-btn:hover { background: #1e2e1e; }
+    #copy-btn.copied { background: #0f2a18; color: #4adc88; }
 
     /* Status bar */
-    #status { padding: 6px 16px; font-size: 11px; color: #555; background: #111; border-top: 1px solid #222; }
+    #status { padding: 6px 14px; font-size: 11px; color: #555; background: #111; border-top: 1px solid #1e1e1e; flex-shrink: 0; }
   </style>
 </head>
 <body>
 <div id="app">
-  <!-- 3D Viewport -->
+
+  <!-- ── 3D Viewport ── -->
   <div id="vp-wrap">
     <canvas id="vp"></canvas>
     <div id="labels"></div>
+
+    <!-- Drop overlay (shown until model is loaded) -->
+    <div id="drop-overlay">
+      <div class="drop-icon">⬆</div>
+      <p>Drop a .glb file here or</p>
+      <label class="drop-btn" for="model-input-drop">Browse .glb / .gltf</label>
+      <input type="file" id="model-input-drop" accept=".glb,.gltf" style="display:none">
+      <p style="font-size:10px;margin-top:4px;color:#555">or load your file from the sidebar →</p>
+    </div>
   </div>
 
-  <!-- Sidebar -->
+  <!-- ── Sidebar ── -->
   <div id="sidebar">
-    <h2>Zonas</h2>
-    <div id="zone-grid"></div>
 
-    <div id="info-panel">
-      <p id="zone-name">Zona seleccionada: 0 (Ding)</p>
-      <div id="coords">
-        <span>x</span> 0.000 &nbsp; <span>y</span> 0.000 &nbsp; <span>z</span> 0.000
+    <!-- Model upload -->
+    <div class="sb-section">
+      <h2>3D Model</h2>
+      <div class="upload-row">
+        <label class="upload-btn" for="model-input-sb">Load .glb</label>
+        <input type="file" id="model-input-sb" accept=".glb,.gltf" style="display:none">
+        <span class="upload-name" id="model-name">No model loaded</span>
       </div>
     </div>
 
-    <div id="actions">
-      <button class="action" id="btn-clear-zone">Borrar zona</button>
-      <button class="action danger" id="btn-clear-all">Borrar todo</button>
+    <!-- Zone selector -->
+    <div class="sb-section">
+      <h2>Zones</h2>
+      <div id="zone-grid"></div>
     </div>
 
-    <div id="instructions">
-      <strong>Haz clic</strong> en el modelo para colocar la zona activa.<br>
-      <strong>Haz clic</strong> en un disco para seleccionarlo.<br>
-      <strong>Auto-avanza</strong> a la siguiente zona después de colocar.
+    <!-- Selected zone info -->
+    <div class="sb-section">
+      <div class="info-row">
+        <span id="zone-name">Zone 0 — Ding</span>
+      </div>
+      <div id="coords">
+        <span>x</span> — &nbsp; <span>y</span> — &nbsp; <span>z</span> —
+      </div>
     </div>
 
-    <h2 style="padding-top:10px;">Exportar código</h2>
-    <div id="export-section">
+    <!-- Actions -->
+    <div class="sb-section">
+      <div id="actions">
+        <button class="action" id="btn-clear-zone">Clear zone</button>
+        <button class="action danger" id="btn-clear-all">Clear all</button>
+      </div>
+    </div>
+
+    <!-- Sound assignments -->
+    <div class="sb-section">
+      <h2>Sounds per zone</h2>
+      <div class="sound-upload-row">
+        <label class="upload-btn" for="sounds-input">Load audio</label>
+        <input type="file" id="sounds-input" accept=".mp3,.wav,.ogg,.m4a" multiple style="display:none">
+        <span id="sounds-count">No files loaded</span>
+      </div>
+      <div id="zone-sound-list"></div>
+    </div>
+
+    <!-- Export -->
+    <div class="sb-section" style="flex:1;display:flex;flex-direction:column;">
+      <h2>Export code</h2>
       <textarea id="export-code" readonly spellcheck="false"></textarea>
-      <button id="copy-btn">Copiar TypeScript</button>
+      <button id="copy-btn">Copy TypeScript</button>
     </div>
+
+    <div id="status">Load a .glb model to begin</div>
   </div>
 </div>
-
-<div id="status">Cargando modelo…</div>
 
 <script type="module">
 import * as THREE from 'three';
@@ -136,43 +222,21 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader }   from 'three/addons/loaders/DRACOLoader.js';
 
-// ── Constants ────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 const NUM_ZONES = 9;
-const ZONE_NAMES = ['0 Ding', '1', '2', '3', '4', '5', '6', '7', '8'];
+const ZONE_NAMES = ['Ding', '1', '2', '3', '4', '5', '6', '7', '8'];
 const ZONE_COLORS_HEX = [
-  '#FFD700', // 0 gold  — Ding
-  '#FF6B6B', // 1 red
-  '#FF8C42', // 2 orange
-  '#FFEB3B', // 3 yellow
-  '#6BCB77', // 4 green
-  '#4D96FF', // 5 blue
-  '#AB7CFF', // 6 purple
-  '#F15BB5', // 7 pink
-  '#40E0D0', // 8 turquoise
+  '#FFD700','#FF6B6B','#FF8C42','#FFEB3B','#6BCB77',
+  '#4D96FF','#AB7CFF','#F15BB5','#40E0D0',
 ];
 const ZONE_COLORS_THREE = ZONE_COLORS_HEX.map(c => parseInt(c.slice(1), 16));
 
-// Placeholder starting offsets (from handpan.ts) — user replaces these
-const DEFAULTS = [
-  [ 0.000,  0.040,  0.000],
-  [ 0.120,  0.020,  0.000],
-  [ 0.090,  0.020,  0.090],
-  [ 0.000,  0.020,  0.120],
-  [-0.090,  0.020,  0.090],
-  [-0.120,  0.020,  0.000],
-  [-0.090,  0.020, -0.090],
-  [ 0.090,  0.020, -0.090],
-  [ 0.000,  0.020, -0.120], // 8 — front (fine-tune on model)
-];
-
 // ── State ─────────────────────────────────────────────────────────────────────
-const zones = Array.from({ length: NUM_ZONES }, (_, i) => ({
-  position: null,  // THREE.Vector3 | null — world space (= local since model at origin)
-  placed: false,
-}));
+const zones = Array.from({ length: NUM_ZONES }, () => ({ position: null, placed: false }));
+const zoneSounds = Array(NUM_ZONES).fill(null); // filename string | null
+let loadedSoundFiles = []; // array of File objects
 let selectedZone = 0;
 let handpanGroup = null;
-let modelCenter  = new THREE.Vector3();
 
 // ── Three.js setup ────────────────────────────────────────────────────────────
 const canvas   = document.getElementById('vp');
@@ -190,7 +254,6 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.1;
 
-// Lighting
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 const sun = new THREE.DirectionalLight(0xfff8e0, 2.0);
 sun.position.set(2, 5, 3);
@@ -199,7 +262,6 @@ const fill = new THREE.DirectionalLight(0xc0d0ff, 0.5);
 fill.position.set(-3, 1, -2);
 scene.add(fill);
 
-// Grid
 const grid = new THREE.GridHelper(3, 30, 0x222222, 0x1a1a1a);
 scene.add(grid);
 
@@ -207,17 +269,12 @@ scene.add(grid);
 const diskGeometry = new THREE.CircleGeometry(0.10, 48);
 const zoneMeshes   = [];
 const labelEls     = [];
-
 const labelsContainer = document.getElementById('labels');
 
 for (let i = 0; i < NUM_ZONES; i++) {
-  // Disk mesh
   const mat  = new THREE.MeshBasicMaterial({
-    color: ZONE_COLORS_THREE[i],
-    transparent: true,
-    opacity: 0.55,
-    side: THREE.DoubleSide,
-    depthWrite: false,
+    color: ZONE_COLORS_THREE[i], transparent: true, opacity: 0.55,
+    side: THREE.DoubleSide, depthWrite: false,
   });
   const disk = new THREE.Mesh(diskGeometry, mat);
   disk.visible = false;
@@ -226,30 +283,25 @@ for (let i = 0; i < NUM_ZONES; i++) {
   scene.add(disk);
   zoneMeshes.push(disk);
 
-  // Ring outline (selected indicator)
   const ringGeo = new THREE.RingGeometry(0.095, 0.105, 48);
-  const ringMat = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
-    transparent: true,
-    opacity: 0.9,
-    side: THREE.DoubleSide,
-  });
-  const ring = new THREE.Mesh(ringGeo, ringMat);
+  const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
+    color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide,
+  }));
   ring.rotation.x = -Math.PI / 2;
   ring.visible = false;
   disk.add(ring);
   disk.userData.ring = ring;
 
-  // HTML label
   const lbl = document.createElement('div');
   lbl.className = 'zone-label';
   lbl.textContent = String(i);
   lbl.style.background = ZONE_COLORS_HEX[i];
+  lbl.style.display = 'none';
   labelsContainer.appendChild(lbl);
   labelEls.push(lbl);
 }
 
-// ── Sidebar buttons ───────────────────────────────────────────────────────────
+// ── Sidebar zone buttons ──────────────────────────────────────────────────────
 const zoneGrid = document.getElementById('zone-grid');
 const btnEls   = [];
 
@@ -257,86 +309,182 @@ for (let i = 0; i < NUM_ZONES; i++) {
   const btn = document.createElement('button');
   btn.className = 'zone-btn';
   btn.textContent = ZONE_NAMES[i];
-  btn.style.background = ZONE_COLORS_HEX[i] + '55';
+  btn.style.background  = ZONE_COLORS_HEX[i] + '44';
   btn.style.borderColor = ZONE_COLORS_HEX[i];
   btn.onclick = () => selectZone(i);
   zoneGrid.appendChild(btn);
   btnEls.push(btn);
 }
 
-// ── Load model ────────────────────────────────────────────────────────────────
+// ── Sound assignment rows ─────────────────────────────────────────────────────
+const zoneSoundList = document.getElementById('zone-sound-list');
+const soundSelects  = [];
+
+for (let i = 0; i < NUM_ZONES; i++) {
+  const row = document.createElement('div');
+  row.className = 'zone-sound-row';
+
+  const dot = document.createElement('div');
+  dot.className = 'zs-dot';
+  dot.style.background = ZONE_COLORS_HEX[i];
+  dot.textContent = String(i);
+
+  const name = document.createElement('span');
+  name.className = 'zs-name';
+  name.textContent = ZONE_NAMES[i];
+
+  const sel = document.createElement('select');
+  sel.className = 'zs-select';
+  sel.dataset.zone = String(i);
+  const noneOpt = document.createElement('option');
+  noneOpt.value = '';
+  noneOpt.textContent = '— none —';
+  sel.appendChild(noneOpt);
+  sel.addEventListener('change', () => {
+    zoneSounds[i] = sel.value || null;
+    sel.classList.toggle('assigned', !!sel.value);
+    updateExport();
+  });
+
+  row.appendChild(dot);
+  row.appendChild(name);
+  row.appendChild(sel);
+  zoneSoundList.appendChild(row);
+  soundSelects.push(sel);
+}
+
+// ── GLTF Loader ───────────────────────────────────────────────────────────────
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/gltf/');
-
 const loader = new GLTFLoader();
 loader.setDRACOLoader(dracoLoader);
 
-loader.load(
-  './gltf/handpan/hand_pan.glb',
-  (gltf) => {
+function loadModelFromURL(url, filename) {
+  if (handpanGroup) {
+    scene.remove(handpanGroup);
+    handpanGroup = null;
+  }
+  setStatus('Loading model…');
+  loader.load(url, (gltf) => {
     handpanGroup = gltf.scene;
     scene.add(handpanGroup);
 
-    // Fit camera to model
     const box    = new THREE.Box3().setFromObject(handpanGroup);
     const size   = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    modelCenter.copy(center);
-
     const maxDim = Math.max(size.x, size.y, size.z);
     const dist   = maxDim * 2.2;
     camera.position.set(center.x, center.y + dist * 0.6, center.z + dist * 0.9);
     camera.lookAt(center);
     controls.target.copy(center);
     controls.update();
-
-    // Snap grid to model base
     grid.position.y = box.min.y;
 
-    setStatus(`Modelo cargado — ${(size.x * 100).toFixed(0)}×${(size.y * 100).toFixed(0)}×${(size.z * 100).toFixed(0)} cm`);
+    document.getElementById('drop-overlay').style.display = 'none';
+    document.getElementById('model-name').textContent = filename;
+    document.getElementById('model-name').classList.add('loaded');
+    setStatus(`Model loaded — ${(size.x*100).toFixed(0)}×${(size.y*100).toFixed(0)}×${(size.z*100).toFixed(0)} cm`);
     updateExport();
     selectZone(0);
-  },
-  undefined,
-  (err) => {
+  }, undefined, (err) => {
     console.error(err);
-    setStatus('Error al cargar el modelo. Asegúrate de que el servidor esté corriendo (npm run dev).');
-  },
-);
+    setStatus('Error loading model. Make sure it is a valid .glb/.gltf file.');
+  });
+}
+
+function handleModelFile(file) {
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  loadModelFromURL(url, file.name);
+}
+
+// Model upload — sidebar
+document.getElementById('model-input-sb').addEventListener('change', (e) => {
+  handleModelFile(e.target.files[0]);
+});
+
+// Model upload — drop overlay button
+document.getElementById('model-input-drop').addEventListener('change', (e) => {
+  handleModelFile(e.target.files[0]);
+});
+
+// Drag-and-drop on viewport
+const dropOverlay = document.getElementById('drop-overlay');
+const vpWrap = document.getElementById('vp-wrap');
+
+vpWrap.addEventListener('dragover', (e) => { e.preventDefault(); dropOverlay.classList.add('drag-over'); });
+vpWrap.addEventListener('dragleave', () => { dropOverlay.classList.remove('drag-over'); });
+vpWrap.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropOverlay.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && (file.name.endsWith('.glb') || file.name.endsWith('.gltf'))) {
+    handleModelFile(file);
+  } else {
+    setStatus('Please drop a .glb or .gltf file.');
+  }
+});
+
+// ── Sound upload ──────────────────────────────────────────────────────────────
+document.getElementById('sounds-input').addEventListener('change', (e) => {
+  loadedSoundFiles = Array.from(e.target.files);
+  const count = document.getElementById('sounds-count');
+  count.textContent = `${loadedSoundFiles.length} file${loadedSoundFiles.length !== 1 ? 's' : ''} loaded`;
+  count.classList.add('loaded');
+  rebuildSoundOptions();
+  updateExport();
+});
+
+function rebuildSoundOptions() {
+  for (let i = 0; i < NUM_ZONES; i++) {
+    const sel = soundSelects[i];
+    const current = sel.value;
+    // Clear existing options (keep "none")
+    sel.innerHTML = '';
+    const none = document.createElement('option');
+    none.value = ''; none.textContent = '— none —';
+    sel.appendChild(none);
+    // Add loaded files
+    for (const f of loadedSoundFiles) {
+      const opt = document.createElement('option');
+      opt.value = f.name;
+      opt.textContent = f.name;
+      sel.appendChild(opt);
+    }
+    // Restore previous selection if still available
+    if (current && loadedSoundFiles.some(f => f.name === current)) {
+      sel.value = current;
+    } else {
+      sel.value = '';
+      zoneSounds[i] = null;
+    }
+    sel.classList.toggle('assigned', !!sel.value);
+  }
+}
 
 // ── Interaction ───────────────────────────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
 const mouse2d   = new THREE.Vector2();
-let mouseDownX = 0, mouseDownY = 0;
+let mouseDownX  = 0, mouseDownY = 0;
 
-renderer.domElement.addEventListener('mousedown', (e) => {
-  mouseDownX = e.clientX; mouseDownY = e.clientY;
-});
-
+renderer.domElement.addEventListener('mousedown', (e) => { mouseDownX = e.clientX; mouseDownY = e.clientY; });
 renderer.domElement.addEventListener('mouseup', (e) => {
-  const moved = Math.hypot(e.clientX - mouseDownX, e.clientY - mouseDownY);
-  if (moved > 5) return; // was a drag, not a click
+  if (Math.hypot(e.clientX - mouseDownX, e.clientY - mouseDownY) > 5) return;
 
   const rect = renderer.domElement.getBoundingClientRect();
   mouse2d.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
   mouse2d.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
-
   raycaster.setFromCamera(mouse2d, camera);
 
-  // 1. Click on existing zone marker → select it
-  const visibleDisks = zoneMeshes.filter(m => m.visible);
-  const diskHits = raycaster.intersectObjects(visibleDisks, false);
-  if (diskHits.length > 0) {
-    selectZone(diskHits[0].object.userData.zoneIndex);
-    return;
-  }
+  // Click on existing disk → select it
+  const diskHits = raycaster.intersectObjects(zoneMeshes.filter(m => m.visible), false);
+  if (diskHits.length > 0) { selectZone(diskHits[0].object.userData.zoneIndex); return; }
 
-  // 2. Click on model surface → place selected zone
+  // Click on model → place zone
   if (!handpanGroup) return;
   const modelHits = raycaster.intersectObject(handpanGroup, true);
   if (modelHits.length > 0) {
-    placeZone(selectedZone, modelHits[0].point, modelHits[0].face?.normal);
-    // Auto-advance to next unplaced zone
+    placeZone(selectedZone, modelHits[0].point);
     const next = findNextUnplaced(selectedZone);
     if (next !== -1) selectZone(next);
   }
@@ -353,40 +501,25 @@ function findNextUnplaced(from) {
 // ── Zone management ───────────────────────────────────────────────────────────
 function selectZone(i) {
   selectedZone = i;
-  btnEls.forEach((b, idx) => {
-    b.classList.toggle('active', idx === i);
-  });
-  zoneMeshes.forEach((m, idx) => {
-    m.userData.ring.visible = (idx === i && m.visible);
-  });
+  btnEls.forEach((b, idx) => b.classList.toggle('active', idx === i));
+  zoneMeshes.forEach((m, idx) => { m.userData.ring.visible = (idx === i && m.visible); });
   updateInfoPanel();
 }
 
-function placeZone(i, worldPoint, faceNormal) {
-  zones[i].position = worldPoint.clone();
+function placeZone(i, point) {
+  zones[i].position = point.clone();
   zones[i].placed   = true;
 
   const disk = zoneMeshes[i];
-  disk.position.copy(worldPoint);
+  disk.position.copy(point);
+  disk.position.y += 0.003;
+  disk.rotation.x  = -Math.PI / 2;
   disk.visible = true;
-
-  // Orient disk along the surface normal
-  if (faceNormal) {
-    const worldNormal = faceNormal.clone().transformDirection(
-      zoneMeshes[i] /* wrong — need the hit object's matrix */
-    );
-    // Simpler fallback: keep rotation.x = -PI/2 (face up, good for horizontal pans)
-  }
-  disk.position.y += 0.003; // slight lift to avoid z-fighting
-  disk.rotation.x = -Math.PI / 2;
-
-  // Update ring visibility for selected
   disk.userData.ring.visible = (i === selectedZone);
-
   btnEls[i].classList.add('placed');
   updateInfoPanel();
   updateExport();
-  setStatus(`Zona ${i} colocada en (${fmt(worldPoint.x)}, ${fmt(worldPoint.y)}, ${fmt(worldPoint.z)})`);
+  setStatus(`Zone ${i} placed at (${fmt(point.x)}, ${fmt(point.y)}, ${fmt(point.z)})`);
 }
 
 function clearZone(i) {
@@ -398,111 +531,97 @@ function clearZone(i) {
   updateExport();
 }
 
-function clearAll() {
-  for (let i = 0; i < NUM_ZONES; i++) clearZone(i);
-}
+function clearAll() { for (let i = 0; i < NUM_ZONES; i++) clearZone(i); }
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
-function fmt(v) { return (v >= 0 ? ' ' : '') + v.toFixed(3); }
+const fmt = v => (v >= 0 ? ' ' : '') + v.toFixed(3);
 
 function updateInfoPanel() {
   const z = zones[selectedZone];
   document.getElementById('zone-name').textContent =
-    `Zona: ${ZONE_NAMES[selectedZone]}${z.placed ? ' ✓' : ' — sin colocar'}`;
-
+    `Zone ${selectedZone} — ${ZONE_NAMES[selectedZone]}${z.placed ? ' ✓' : ''}`;
   const c = document.getElementById('coords');
   if (z.placed) {
     const p = z.position;
     c.innerHTML = `<span>x</span> ${fmt(p.x)} &nbsp; <span>y</span> ${fmt(p.y)} &nbsp; <span>z</span> ${fmt(p.z)}`;
   } else {
-    c.innerHTML = `<span>x</span> —  &nbsp; <span>y</span> —  &nbsp; <span>z</span> — `;
+    c.innerHTML = `<span>x</span> — &nbsp; <span>y</span> — &nbsp; <span>z</span> —`;
   }
 }
 
 function updateExport() {
-  const lines = zones.map((z, i) => {
-    const comment = i === 0 ? ' // 0 Ding centre' : ` // ${i}`;
-    if (!z.placed) return `  [ 0.000,  0.000,  0.000],${comment} — ⚠ no colocado`;
+  const posLines = zones.map((z, i) => {
+    const tag = i === 0 ? ' // 0 Ding' : ` // ${i}`;
+    if (!z.placed) return `  [ 0.000,  0.000,  0.000],${tag} — ⚠ not placed`;
     const p = z.position;
-    return `  [${fmt(p.x)}, ${fmt(p.y)}, ${fmt(p.z)}],${comment}`;
+    return `  [${fmt(p.x)}, ${fmt(p.y)}, ${fmt(p.z)}],${tag}`;
   });
 
+  const soundLines = zones.map((_, i) => {
+    const snd = zoneSounds[i];
+    const tag  = i === 0 ? ' // 0 Ding' : ` // ${i}`;
+    return snd ? `  "${snd}",${tag}` : `  null,${tag} — no sound`;
+  });
+
+  const hasSounds = zoneSounds.some(s => s !== null);
+
   document.getElementById('export-code').value =
-    `// Pega esto en src/handpan.ts\n` +
+    `// Paste into your project's handpan / instrument system\n\n` +
     `const ZONE_OFFSETS: [number, number, number][] = [\n` +
-    lines.join('\n') + '\n' +
-    `];\n\n` +
-    `// Radio por zona (metros) — zona 0 más grande para el Ding\n` +
+    posLines.join('\n') + '\n];\n\n' +
     `const ZONE_RADII: number[] = [\n` +
-    `  0.18, // 0 Ding — más grande\n` +
-    zones.slice(1).map((_, i) => `  0.15, // ${i + 1}`).join('\n') + '\n' +
-    `];\n`;
+    `  0.18, // 0 Ding — wider\n` +
+    zones.slice(1).map((_, i) => `  0.15, // ${i + 1}`).join('\n') + '\n];\n' +
+    (hasSounds
+      ? `\n// Zone → audio file mapping\n// Put these files in your project's audio folder\n` +
+        `const ZONE_SOUNDS: (string | null)[] = [\n` +
+        soundLines.join('\n') + '\n];\n'
+      : '');
 }
 
-function setStatus(msg) {
-  document.getElementById('status').textContent = msg;
-}
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
 
 // ── Button handlers ───────────────────────────────────────────────────────────
 document.getElementById('btn-clear-zone').onclick = () => clearZone(selectedZone);
 document.getElementById('btn-clear-all').onclick  = () => clearAll();
+
 document.getElementById('copy-btn').onclick = () => {
   const ta  = document.getElementById('export-code');
   const btn = document.getElementById('copy-btn');
-
-  // Primary: Clipboard API
-  const showCopied = () => {
-    btn.textContent = '✓ Copiado';
+  const done = () => {
+    btn.textContent = '✓ Copied';
     btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copiar TypeScript'; btn.classList.remove('copied'); }, 2000);
+    setTimeout(() => { btn.textContent = 'Copy TypeScript'; btn.classList.remove('copied'); }, 2000);
   };
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(ta.value).then(showCopied).catch(() => {
-      // Fallback: select + execCommand
-      ta.select();
-      document.execCommand('copy');
-      showCopied();
-    });
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(ta.value).then(done).catch(() => { ta.select(); document.execCommand('copy'); done(); });
   } else {
-    // Fallback for non-HTTPS or permission denied
-    ta.select();
-    document.execCommand('copy');
-    showCopied();
+    ta.select(); document.execCommand('copy'); done();
   }
 };
 
 // ── Resize ────────────────────────────────────────────────────────────────────
 function onResize() {
   const wrap = document.getElementById('vp-wrap');
-  const w = wrap.clientWidth, h = wrap.clientHeight;
-  renderer.setSize(w, h, false);
-  camera.aspect = w / h;
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight, false);
+  camera.aspect = wrap.clientWidth / wrap.clientHeight;
   camera.updateProjectionMatrix();
 }
 new ResizeObserver(onResize).observe(document.getElementById('vp-wrap'));
 onResize();
 
 // ── Render loop ───────────────────────────────────────────────────────────────
-const _proj  = new THREE.Vector3();
-const _vw    = { w: 0, h: 0 };
-
+const _proj = new THREE.Vector3();
 function updateLabels() {
-  const canvas = renderer.domElement;
-  _vw.w = canvas.clientWidth;
-  _vw.h = canvas.clientHeight;
-
+  const w = canvas.clientWidth, h = canvas.clientHeight;
   for (let i = 0; i < NUM_ZONES; i++) {
-    const lbl  = labelEls[i];
-    const disk = zoneMeshes[i];
+    const lbl = labelEls[i], disk = zoneMeshes[i];
     if (!disk.visible) { lbl.style.display = 'none'; continue; }
-
     _proj.copy(disk.position).project(camera);
     if (_proj.z > 1) { lbl.style.display = 'none'; continue; }
-
     lbl.style.display = 'flex';
-    lbl.style.left = ((_proj.x + 1) / 2 * _vw.w) + 'px';
-    lbl.style.top  = ((-_proj.y + 1) / 2 * _vw.h) + 'px';
+    lbl.style.left = ((_proj.x + 1) / 2 * w) + 'px';
+    lbl.style.top  = ((-_proj.y + 1) / 2 * h) + 'px';
   }
 }
 
@@ -514,7 +633,6 @@ function animate() {
 }
 animate();
 
-// ── Initial UI state ──────────────────────────────────────────────────────────
 selectZone(0);
 updateExport();
 </script>
