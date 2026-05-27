@@ -42,6 +42,6 @@ export default defineConfig(({ mode }) => {
     esbuildOptions: { target: "esnext" },
   },
   publicDir: "public",
-  base: "./",
+  base: process.env.GITHUB_ACTIONS ? "/panflowXR/" : "./",
   };
 });
