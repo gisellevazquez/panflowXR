@@ -172,6 +172,14 @@
     color: #f5f5f5;
   }
 
+  /* ── Soon (not yet available) buttons ───────────────────── */
+  .btn-soon {
+    background-color: #18181b;
+    border-color: #2a2035;
+    color: #52525b;
+    cursor: default;
+  }
+
   /* ── Configure button ────────────────────────────────────── */
   .btn-configure {
     background-color: #1e1b4b;
@@ -231,14 +239,13 @@
 
   <!-- ── CTA buttons ──────────────────────────────────────── -->
   <div class="options">
-    <button class="opt-btn btn-primary" id="btn-color">Customize color</button>
-    <button class="opt-btn btn-secondary" id="btn-scale">Choose scale</button>
-    <button class="opt-btn btn-secondary" id="btn-demo">Request demo</button>
+    <button class="opt-btn btn-soon" id="btn-color">Choose color  ·  soon</button>
+    <button class="opt-btn btn-soon" id="btn-scale">Choose scale  ·  soon</button>
   </div>
 
   <div class="divider"></div>
 
   <!-- ── Configure shortcut ───────────────────────────────── -->
-  <button class="opt-btn btn-configure" id="btn-configure">⚙  Configure Experience</button>
+  <button class="opt-btn btn-configure" id="btn-configure">Configure Experience →</button>
 
 </div>

@@ -135,7 +135,8 @@ export class ProductInfoSystem extends createSystem({
     if (this.panelEntity?.object3D) {
       this.panelEntity.object3D.visible = true;
     }
-    (doc.rootElement as any).setProperties({ display: "none" });
+    // Respect whatever state update() already decided — don't blindly hide.
+    (doc.rootElement as any).setProperties({ display: this.prevVisible ? "flex" : "none" });
 
     doc.getElementById("btn-configure")?.addEventListener("click", () => {
       window.dispatchEvent(new Event("panflow-open-settings"));

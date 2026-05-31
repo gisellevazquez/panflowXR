@@ -41,8 +41,8 @@ export class AmbientSoundManager {
   }
 
   setVolume(v: number): void {
-    if (!this.ctx) return;
     this._volume = Math.min(1, Math.max(0, v));
+    if (!this.ctx) return; // _volume is stored; applied in init() when audio starts
     this.out.gain.setTargetAtTime(this._volume, this.ctx.currentTime, 0.05);
   }
 
