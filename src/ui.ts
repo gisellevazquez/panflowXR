@@ -91,6 +91,10 @@ export class MenuSystem extends createSystem({
         this._pollForDocument(entity);
       }
     });
+
+    const openHandler = () => { if (!this.panelVisible) this._toggle(); };
+    window.addEventListener("panflow-open-settings", openHandler);
+    this.cleanupFuncs.push(() => window.removeEventListener("panflow-open-settings", openHandler));
   }
 
   update(delta: number, _time: number) {

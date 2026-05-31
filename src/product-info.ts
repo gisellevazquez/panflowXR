@@ -137,6 +137,10 @@ export class ProductInfoSystem extends createSystem({
     }
     (doc.rootElement as any).setProperties({ display: "none" });
 
+    doc.getElementById("btn-configure")?.addEventListener("click", () => {
+      window.dispatchEvent(new Event("panflow-open-settings"));
+    });
+
     // Make panel double-sided (UIKit builds geometry async)
     setTimeout(() => {
       this.panelEntity?.object3D?.traverse((obj: any) => {
