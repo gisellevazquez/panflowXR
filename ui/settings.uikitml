@@ -140,6 +140,34 @@
     cursor: pointer;
   }
 
+  /* ── Volume step buttons (−/+) ───────────────────────────── */
+  .vol-ctrl-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5;
+  }
+
+  .vol-step-btn {
+    width: 6;
+    height: 6;
+    border-radius: 3;
+    background-color: #1c1c2e;
+    border-color: #2d2d44;
+    border-width: 0.12;
+    color: #a5b4fc;
+    font-size: 4;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .vol-step-btn:hover {
+    background-color: #2d2d44;
+    color: #c7d2fe;
+  }
+
   /* ── Reverb preset buttons ────────────────────────────────── */
   .preset-row {
     display: flex;
@@ -344,14 +372,14 @@
       <span class="section-name">Ambient Sound</span>
       <span class="pct-green" id="ambient-vol-display">15%</span>
     </div>
-    <div class="slider-row">
-      <span class="edge-lbl">Off</span>
+    <div class="vol-ctrl-row">
+      <button class="vol-step-btn" id="ambient-vol-down">−</button>
       <div class="track">
-        <button class="fill-green" id="ambient-vol-down"></button>
-        <div class="thumb-green" id="ambient-thumb"></div>
-        <button class="track-empty" id="ambient-vol-up"></button>
+        <div class="fill-green" id="ambient-vol-fill"></div>
+        <div class="thumb-green"></div>
+        <div class="track-empty"></div>
       </div>
-      <span class="edge-lbl">Loud</span>
+      <button class="vol-step-btn" id="ambient-vol-up">+</button>
     </div>
     <div class="ambient-grid">
       <button class="ambient-btn ambient-active" id="ambient-none">None</button>

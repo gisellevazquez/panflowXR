@@ -19,6 +19,9 @@ import { ambientManager, AmbientType } from "./ambient.js";
 import { bubbleManager }      from "./bubbles.js";
 import { productInfoManager } from "./product-info.js";
 import { melodyManager, MelodyMode } from "./melody.js";
+import { Handpan } from "./handpan.js";
+
+const SETTINGS_PANEL_OFFSET_X = 0.55; // mirrors product info offset, on opposite side
 
 // Reverb preset values (wet mix 0–1)
 const REVERB_PRESETS: Record<string, number> = {
@@ -41,13 +44,15 @@ const REVERB_FILL_MAX = 30;
  */
 export class MenuSystem extends createSystem({
   configuredPanels: { required: [PanelUI, PanelDocument] },
+  handpans:         { required: [Handpan] },
 }) {
-  private panelEntity:    Entity        | null = null;
-  private panelDoc:       UIKitDocument | null = null;
-  private panelVisible                  = false;
-  private documentWiredUp               = false;
-  private pinchHeldSec                  = 0;
-  private readonly TOGGLE_HOLD_SEC      = 1.5;
+  private panelEntity:        Entity        | null = null;
+  private panelDoc:           UIKitDocument | null = null;
+  private panelVisible                      = false;
+  private documentWiredUp                   = false;
+  private pinchHeldSec                      = 0;
+  private readonly TOGGLE_HOLD_SEC          = 1.5;
+  private _openedFromHandpan                = false;
 
   init() {
     const group = new Group();
@@ -92,7 +97,10 @@ export class MenuSystem extends createSystem({
       }
     });
 
-    const openHandler = () => { if (!this.panelVisible) this._toggle(); };
+    const openHandler = () => {
+      this._openedFromHandpan = true;
+      if (!this.panelVisible) this._toggle();
+    };
     window.addEventListener("panflow-open-settings", openHandler);
     this.cleanupFuncs.push(() => window.removeEventListener("panflow-open-settings", openHandler));
   }
@@ -136,12 +144,23 @@ export class MenuSystem extends createSystem({
       }
       const obj = this.panelEntity?.object3D;
       if (obj && this.player.head) {
+        if (this._openedFromHandpan) {
+          // Position to the left of the handpan, mirroring the product info panel
+          for (const e of this.queries.handpans.entities) {
+            const hpPos = new Vector3();
+            e.object3D!.getWorldPosition(hpPos);
+            obj.position.set(hpPos.x - SETTINGS_PANEL_OFFSET_X, hpPos.y + 0.05, hpPos.z);
+            break;
+          }
+        }
+        // Always face the player (Y-axis lock keeps panel upright)
         const headPos = new Vector3();
         this.player.head.getWorldPosition(headPos);
         headPos.y = obj.getWorldPosition(new Vector3()).y;
         obj.lookAt(headPos);
       }
     } else {
+      this._openedFromHandpan = false;
       const target = this.player.gripSpaces?.left;
       if (this.panelEntity && !this.panelEntity.hasComponent(Follower) && target) {
         this.panelEntity.addComponent(Follower, {
@@ -223,7 +242,7 @@ export class MenuSystem extends createSystem({
 
     // ─ Ambient volume — fill+thumb slider (tap fill=down, tap empty=up) ──────
     const volDisplay  = doc.getElementById("ambient-vol-display") as any;
-    const ambientFill = doc.getElementById("ambient-vol-down")    as any; // fill IS the down-btn
+    const ambientFill = doc.getElementById("ambient-vol-fill")    as any;
     const AMBIENT_FILL_MAX = 30;
 
     const updateAmbientVolUI = () => {
