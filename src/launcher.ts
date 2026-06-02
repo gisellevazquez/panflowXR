@@ -14,7 +14,7 @@ import { Handpan } from "./handpan.js";
 import { productInfoManager } from "./product-info.js";
 
 // Launcher sits this many metres below the handpan centre
-const LAUNCHER_Y_BELOW = 0.18;
+const LAUNCHER_Y_BELOW = 0.48;
 
 export class LauncherSystem extends createSystem({
   handpans: { required: [Handpan] },

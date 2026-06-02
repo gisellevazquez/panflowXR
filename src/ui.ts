@@ -205,7 +205,9 @@ export class MenuSystem extends createSystem({
     }, 200);
 
     // ─ Close button ────────────────────────────────────────────────────────
-    doc.getElementById("close-btn")?.addEventListener("click", () => {
+    const closeBtn = doc.getElementById("close-btn") as any;
+    closeBtn?.setProperties({ text: "X", color: 0xa0a0a0 });
+    closeBtn?.addEventListener("click", () => {
       this._toggle();
     });
 

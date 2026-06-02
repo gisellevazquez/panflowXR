@@ -147,7 +147,9 @@ export class ProductInfoSystem extends createSystem({
     // Respect whatever state update() already decided — don't blindly hide.
     (doc.rootElement as any).setProperties({ display: this.prevVisible ? "flex" : "none" });
 
-    doc.getElementById("close-btn-product")?.addEventListener("click", () => {
+    const closeBtn = doc.getElementById("close-btn-product") as any;
+    closeBtn?.setProperties({ text: "X", color: 0xa0a0a0 });
+    closeBtn?.addEventListener("click", () => {
       productInfoManager.enabled = false;
       this._setVisible(false);
       this.prevVisible = false;
