@@ -58,8 +58,8 @@ export class MelodySystem extends createSystem({
   // Guided-mode state
   private guidedStep    = 0;
   private waitingTouch  = false;
-  private feedbackTimer = 0; // counts down after wrong touch before re-highlighting
-  private advanceTimer  = 0; // brief pause between correct touch and next zone
+  private feedbackTimer = 0;
+  private advanceTimer  = 0;
 
   private readonly onNote = (e: Event) => {
     if (!this.active || melodyManager.mode !== "guided") return;
@@ -80,8 +80,9 @@ export class MelodySystem extends createSystem({
     });
   }
 
-  update(delta: number, time: number) {
-    // Sync play/stop with melodyManager
+  update(delta: number, _time: number) {
+    if (!this.setupDone) return;
+
     if (melodyManager.playing && !this.active) {
       this._start();
     } else if (!melodyManager.playing && this.active) {
@@ -100,47 +101,50 @@ export class MelodySystem extends createSystem({
       this._tickGuided(delta);
     }
 
-    // Pulse the active zone indicator
     this._pulse();
   }
 
   // ── Private ───────────────────────────────────────────────────────────────
 
   private _buildIndicators(entity: Entity): void {
-    const mesh = entity.object3D!;
-    const geo  = new CircleGeometry(0.30, 32);
-
     for (let i = 0; i < ZONE_OFFSETS.length; i++) {
+      // Each mesh gets its own geometry — never share geometry across meshes
+      const geo = new CircleGeometry(0.30, 32);
       const mat = new MeshBasicMaterial({
-        color: C_IDLE,
+        color:       C_IDLE,
         transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        side: DoubleSide,
+        opacity:     0,
+        depthWrite:  false,
+        side:        DoubleSide,
       });
       const ring = new Mesh(geo, mat);
       const [ox, oy, oz] = ZONE_OFFSETS[i];
       ring.position.set(ox, oy + 0.04, oz);
       ring.rotation.x = -Math.PI / 2;
       ring.visible    = false;
-      mesh.add(ring);
+
+      // Use createTransformEntity so the ring is properly registered in the
+      // IWSDK scene graph — raw mesh.add() bypasses the ECS and can cause
+      // undefined behaviour with the framework's transform system.
+      this.world.createTransformEntity(ring, { parent: entity });
+
       this.indicators.push(ring);
       this.mats.push(mat);
     }
   }
 
   private _start(): void {
-    this.active       = true;
-    this.elapsed      = 0;
-    this.noteIndex    = 0;
-    this.pulseTime    = 0;
-    this.guidedStep   = 0;
-    this.waitingTouch = false;
+    this.active        = true;
+    this.elapsed       = 0;
+    this.noteIndex     = 0;
+    this.pulseTime     = 0;
+    this.guidedStep    = 0;
+    this.waitingTouch  = false;
     this.feedbackTimer = 0;
     this.advanceTimer  = 0;
 
     this.indicators.forEach((ind, i) => {
-      ind.visible         = true;
+      ind.visible          = true;
       this.mats[i].color.setHex(C_IDLE);
       this.mats[i].opacity = 0.12;
     });
@@ -154,13 +158,12 @@ export class MelodySystem extends createSystem({
   private _stop(): void {
     this.active = false;
     this.indicators.forEach((ind, i) => {
-      ind.visible         = false;
+      ind.visible          = false;
       this.mats[i].opacity = 0;
     });
   }
 
   private _tickFree(): void {
-    // Fire notes by timeline
     while (
       this.noteIndex < MELODY.length &&
       this.elapsed >= MELODY[this.noteIndex].time
@@ -171,7 +174,6 @@ export class MelodySystem extends createSystem({
       this.noteIndex++;
     }
 
-    // Auto-stop after full duration
     if (this.elapsed >= TOTAL_DURATION) {
       melodyManager.playing = false;
       window.dispatchEvent(new Event("melody-ended"));
@@ -179,7 +181,6 @@ export class MelodySystem extends createSystem({
   }
 
   private _tickGuided(delta: number): void {
-    // Countdown after wrong touch → re-enable
     if (this.feedbackTimer > 0) {
       this.feedbackTimer -= delta;
       if (this.feedbackTimer <= 0 && this.guidedStep < MELODY.length) {
@@ -188,7 +189,6 @@ export class MelodySystem extends createSystem({
       }
     }
 
-    // Pause between correct touch and next zone highlight
     if (this.advanceTimer > 0) {
       this.advanceTimer -= delta;
       if (this.advanceTimer <= 0 && this.guidedStep < MELODY.length) {
@@ -201,7 +201,7 @@ export class MelodySystem extends createSystem({
   private _handleTouch(zone: number): void {
     if (!this.waitingTouch || this.guidedStep >= MELODY.length) return;
 
-    const expected = MELODY[this.guidedStep].zone;
+    const expected    = MELODY[this.guidedStep].zone;
     this.waitingTouch = false;
 
     if (zone === expected) {
@@ -210,17 +210,14 @@ export class MelodySystem extends createSystem({
       this.guidedStep++;
 
       if (this.guidedStep >= MELODY.length) {
-        // Finished — let the last note ring, then stop
-        this.advanceTimer = 2.0;
-        this.advanceTimer = -1; // sentinel: stop instead of advance
+        // Last note hit — let it ring briefly then stop
+        this.advanceTimer = 1.8;
         window.dispatchEvent(new Event("melody-ended"));
-        // Keep showing the green indicator for a moment then stop
         setTimeout(() => { melodyManager.playing = false; }, 1800);
       } else {
         this.advanceTimer = 0.5;
       }
     } else {
-      // Wrong zone — brief red flash, then restore
       this._dimAll();
       this.mats[zone].color.setHex(C_WRONG);
       this.mats[zone].opacity = 0.75;
@@ -240,12 +237,12 @@ export class MelodySystem extends createSystem({
   }
 
   private _pulse(): void {
-    // Find which zone is currently active (brightest) and pulse it
     const activeZone = melodyManager.mode === "free"
       ? (this.noteIndex > 0 ? MELODY[this.noteIndex - 1].zone : -1)
       : (this.guidedStep < MELODY.length ? MELODY[this.guidedStep].zone : -1);
 
-    if (activeZone < 0 || !this.waitingTouch && melodyManager.mode === "guided") return;
+    // In guided mode only pulse while waiting for user input
+    if (activeZone < 0 || (melodyManager.mode === "guided" && !this.waitingTouch)) return;
 
     const pulse = 0.75 + 0.25 * Math.sin(this.pulseTime * 4);
     this.mats[activeZone].opacity = pulse;
