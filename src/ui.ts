@@ -20,6 +20,7 @@ import { bubbleManager }      from "./bubbles.js";
 import { productInfoManager } from "./product-info.js";
 import { melodyManager, MelodyMode } from "./melody.js";
 import { Handpan } from "./handpan.js";
+import { recordingManager } from "./recording-system.js";
 
 const SETTINGS_PANEL_OFFSET_X = 0.55; // mirrors product info offset, on opposite side
 
@@ -356,6 +357,53 @@ export class MenuSystem extends createSystem({
     window.addEventListener("melody-ended", () => {
       melodyManager.playing = false;
       setDemoBtn(false);
+    });
+
+    // ─ Recording controls ─────────────────────────────────────────────────
+    const recRecordBtn = doc.getElementById("rec-record") as any;
+    const recPlayBtn   = doc.getElementById("rec-play")   as any;
+    const recStatusLbl = doc.getElementById("rec-status") as any;
+
+    const updateRecUI = () => {
+      const isRec  = recordingManager.isRecording;
+      const isPlay = recordingManager.isPlaying;
+      const hasRec = recordingManager.hasRecording;
+
+      recRecordBtn?.setProperties(isRec
+        ? { text: "■ Stop Rec",  backgroundColor: 0x3f1d1d, borderColor: 0xf87171, color: 0xfca5a5 }
+        : { text: "● Record",   backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0x6b7280 });
+
+      if (isPlay) {
+        recPlayBtn?.setProperties({ text: "■ Stop",  backgroundColor: 0x14532d, borderColor: 0x4ade80, color: 0x86efac });
+      } else if (hasRec) {
+        recPlayBtn?.setProperties({ text: "▶ Play",  backgroundColor: 0x1e1b4b, borderColor: 0x6366f1, color: 0xa5b4fc });
+      } else {
+        recPlayBtn?.setProperties({ text: "▶ Play",  backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0x3f3f46 });
+      }
+
+      const statusText  = isRec ? "Recording..." : isPlay ? "Playing..." : hasRec ? "Take saved" : "Ready";
+      const statusColor = isRec ? 0xf87171 : isPlay ? 0x4ade80 : hasRec ? 0xa5b4fc : 0x52525b;
+      recStatusLbl?.setProperties({ text: statusText, color: statusColor });
+    };
+
+    updateRecUI();
+
+    doc.getElementById("rec-record")?.addEventListener("click", () => {
+      recordingManager.toggleRecording();
+      updateRecUI();
+    });
+
+    doc.getElementById("rec-play")?.addEventListener("click", () => {
+      if (recordingManager.isPlaying) {
+        recordingManager.stopPlayback();
+      } else {
+        recordingManager.playRecording();
+      }
+      updateRecUI();
+    });
+
+    window.addEventListener("recording-playback-ended", () => {
+      updateRecUI();
     });
   }
 }

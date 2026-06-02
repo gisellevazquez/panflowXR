@@ -4,9 +4,7 @@ import {
   AssetManager,
   World,
   SessionMode,
-  DistanceGrabbable,
-  MovementMode,
-  RayInteractable,
+  OneHandGrabbable,
   CylinderGeometry,
   MeshStandardMaterial,
   Mesh,
@@ -20,6 +18,8 @@ import { ambientManager }         from "./ambient.js";
 import { MenuSystem }             from "./ui.js";
 import { ProductInfoSystem }      from "./product-info.js";
 import { MelodySystem }           from "./melody.js";
+import { RecordingSystem, recordingManager } from "./recording-system.js";
+import { RecordingUISystem }               from "./recording-ui.js";
 
 const assets: AssetManifest = {
   handpan: { url: "./gltf/handpan/hand_pan.glb", type: AssetType.GLTF, priority: "critical" },
@@ -100,6 +100,9 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   // Exposed for the landing page "Enter Experience" button
   (window as any).panflowEnterXR = () => world.launchXR();
 
+  // Exposed for manual testing of the recording feature
+  (window as any).panflowRecording = recordingManager;
+
   // ── Handpan ───────────────────────────────────────────────────────────────
   const gltf = AssetManager.getGLTF("handpan");
   let handpanMesh: Object3D;
@@ -121,12 +124,10 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   const handpanEntity = world
     .createTransformEntity(handpanMesh, { parent: world.sceneEntity })
     .addComponent(Handpan)
-    .addComponent(RayInteractable)
-    .addComponent(DistanceGrabbable, {
-      movementMode: MovementMode.MoveAtSource, // moves WITH hand, stays at distance
+    .addComponent(OneHandGrabbable, {
+      // Grip button (squeeze) to reposition — finger pokes play notes without grabbing
       rotate:    true,
       translate: true,
-      scale:     false,
     });
 
   handpanLockManager.entity = handpanEntity;
@@ -142,4 +143,6 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   world.registerSystem(MenuSystem);
   world.registerSystem(ProductInfoSystem);
   world.registerSystem(MelodySystem);
+  world.registerSystem(RecordingSystem);
+  world.registerSystem(RecordingUISystem);
 });

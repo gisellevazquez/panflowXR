@@ -311,6 +311,31 @@
     height: 0.1;
   }
 
+  /* ── Recording action buttons ───────────────────────────── */
+  .rec-action-btn {
+    flex-grow: 1;
+    padding: 1.8;
+    background-color: #18181b;
+    border-color: #27272a;
+    border-width: 0.12;
+    border-radius: 2;
+    color: #6b7280;
+    font-size: 2.8;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .rec-action-btn:hover {
+    background-color: #27272a;
+    color: #fafafa;
+  }
+
+  .rec-status-lbl {
+    font-size: 2.4;
+    color: #52525b;
+  }
+
   /* ── Pinch hint footer ──────────────────────────────────── */
   .pinch-hint {
     display: flex;
@@ -431,6 +456,20 @@
     </div>
     <div class="preset-row">
       <button class="demo-play-btn" id="demo-play">▶  Play Demo</button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Recording ─────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-row">
+      <span class="section-name">Recording</span>
+      <span class="rec-status-lbl" id="rec-status">Ready</span>
+    </div>
+    <div class="preset-row">
+      <button class="rec-action-btn" id="rec-record">● Record</button>
+      <button class="rec-action-btn" id="rec-play">▶ Play</button>
     </div>
   </div>
 

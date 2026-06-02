@@ -3,7 +3,7 @@ import {
   createSystem,
   Vector3,
   Entity,
-  DistanceGrabbable,
+  OneHandGrabbable,
 } from "@iwsdk/core";
 
 import { reverbManager } from "./reverb.js";
@@ -148,8 +148,8 @@ export const handpanLockManager = {
   toggle(): boolean {
     if (!this.entity) return this.locked;
     this.locked = !this.locked;
-    this.entity.setValue(DistanceGrabbable, "translate", !this.locked);
-    this.entity.setValue(DistanceGrabbable, "rotate",    !this.locked);
+    this.entity.setValue(OneHandGrabbable, "translate", !this.locked);
+    this.entity.setValue(OneHandGrabbable, "rotate",    !this.locked);
     return this.locked;
   },
 };
