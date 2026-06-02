@@ -271,9 +271,9 @@ export class MenuSystem extends createSystem({
         const btn = doc.getElementById(`ambient-${t}`) as any;
         if (!btn) continue;
         if (t === active) {
-          btn.setProperties({ backgroundColor: 0x052e16, borderColor: 0x22c55e, color: 0x4ade80 });
+          btn.setProperties({ backgroundColor: 0x122620, borderColor: 0x6eb89a, color: 0x6eb89a });
         } else {
-          btn.setProperties({ backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0x6b7280 });
+          btn.setProperties({ backgroundColor: 0x221e2b, borderColor: 0x2d2a35, color: 0x858585 });
         }
       }
     };
@@ -291,8 +291,8 @@ export class MenuSystem extends createSystem({
     const bubbleSpace = doc.getElementById("bubble-space")  as any;
 
     const setBubbleToggle = (on: boolean) => {
-      bubblePill?.setProperties ({ backgroundColor: on ? 0x14532d : 0x27272a });
-      bubbleKnob?.setProperties ({ backgroundColor: on ? 0x4ade80 : 0x52525b });
+      bubblePill?.setProperties ({ backgroundColor: on ? 0x3d1428 : 0x27272a, borderColor: on ? 0xe89ab4 : 0x27272a });
+      bubbleKnob?.setProperties ({ backgroundColor: on ? 0xf5f5f5 : 0x52525b });
       bubbleSpace?.setProperties({ flexGrow: on ? 1 : 0 });
     };
 
@@ -309,8 +309,8 @@ export class MenuSystem extends createSystem({
     const productSpace = doc.getElementById("product-space")       as any;
 
     const setProductToggle = (on: boolean) => {
-      productPill?.setProperties ({ backgroundColor: on ? 0x14532d : 0x27272a });
-      productKnob?.setProperties ({ backgroundColor: on ? 0x4ade80 : 0x52525b });
+      productPill?.setProperties ({ backgroundColor: on ? 0x261e3a : 0x27272a, borderColor: on ? 0x9e87ce : 0x27272a });
+      productKnob?.setProperties ({ backgroundColor: on ? 0xf5f5f5 : 0x52525b });
       productSpace?.setProperties({ flexGrow: on ? 1 : 0 });
     };
 
@@ -327,11 +327,11 @@ export class MenuSystem extends createSystem({
       const freeBtn    = doc.getElementById("demo-mode-free")    as any;
       const guidedBtn  = doc.getElementById("demo-mode-guided")  as any;
       freeBtn?.setProperties(mode === "free"
-        ? { backgroundColor: 0x1e1b4b, borderColor: 0x6366f1, color: 0xa5b4fc }
-        : { backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0x6b7280 });
+        ? { backgroundColor: 0x38253a, borderColor: 0xe89ab4, color: 0xe89ab4 }
+        : { backgroundColor: 0x1e1828, borderColor: 0x2d2a35, color: 0x858585 });
       guidedBtn?.setProperties(mode === "guided"
-        ? { backgroundColor: 0x1e1b4b, borderColor: 0x6366f1, color: 0xa5b4fc }
-        : { backgroundColor: 0x18181b, borderColor: 0x27272a, color: 0x6b7280 });
+        ? { backgroundColor: 0x38253a, borderColor: 0xe89ab4, color: 0xe89ab4 }
+        : { backgroundColor: 0x1e1828, borderColor: 0x2d2a35, color: 0x858585 });
     };
 
     setDemoMode("free"); // default
@@ -344,8 +344,8 @@ export class MenuSystem extends createSystem({
 
     const setDemoBtn = (playing: boolean) => {
       demoPlayBtn?.setProperties(playing
-        ? { text: "■  Stop", backgroundColor: 0x3f1d1d, borderColor: 0xf87171, color: 0xfca5a5 }
-        : { text: "▶  Play Demo", backgroundColor: 0x1e1b4b, borderColor: 0x6366f1, color: 0xa5b4fc });
+        ? { text: "■  Stop", backgroundColor: 0x3d1428, borderColor: 0xe89ab4, color: 0xe89ab4 }
+        : { text: "▶  Play Demo", backgroundColor: 0xe89ab4, borderColor: 0xe89ab4, color: 0x2a1820 });
     };
 
     doc.getElementById("demo-play")?.addEventListener("click", () => {

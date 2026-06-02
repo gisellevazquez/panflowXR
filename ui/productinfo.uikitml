@@ -3,16 +3,16 @@
   .card {
     width: 54;
     padding: 3;
-    background-color: #1a1520;
-    border-color: #2a2035;
-    border-width: 0.15;
+    background-color: #16121f;
+    border-color: #2d2a35;
+    border-width: 0.12;
     border-radius: 3.5;
     display: flex;
     flex-direction: column;
     gap: 2.4;
   }
 
-  /* ── Eyebrow + title block ────────────────────────────────── */
+  /* ── Header ───────────────────────────────────────────────── */
   .name-block {
     display: flex;
     flex-direction: column;
@@ -29,7 +29,7 @@
 
   .product-name {
     font-size: 5.5;
-    font-weight: 900;
+    font-weight: 700;
     color: #f5f5f5;
     line-height: 1;
     margin: 0;
@@ -43,8 +43,8 @@
 
   /* ── Price row ────────────────────────────────────────────── */
   .price-row {
-    background-color: #1c1724;
-    border-color: #2e2540;
+    background-color: #221e2b;
+    border-color: #2d2a35;
     border-width: 0.12;
     border-radius: 2.2;
     padding: 1.8;
@@ -64,28 +64,41 @@
   .currency-label {
     font-size: 2;
     color: #858585;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    font-weight: 400;
   }
 
   .price {
     font-size: 6;
-    font-weight: 800;
+    font-weight: 700;
     color: #f5f5f5;
     letter-spacing: -0.02em;
   }
 
-  .in-stock-badge {
-    background-color: #0f2b22;
-    border-color: #6eb89a;
+  .stock-badge {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1;
+    background-color: #122620;
+    border-color: #3a7a60;
     border-width: 0.1;
-    border-radius: 1.5;
-    padding: 0.5;
-    color: #6eb89a;
+    border-radius: 2;
+    padding: 0.8;
+  }
+
+  .stock-dot {
+    width: 1.5;
+    height: 1.5;
+    border-radius: 0.75;
+    background-color: #6eb89a;
+    flex-shrink: 0;
+  }
+
+  .stock-text {
     font-size: 1.9;
     font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    color: #6eb89a;
+    letter-spacing: 0.06em;
   }
 
   /* ── Spec grid (2 columns) ────────────────────────────────── */
@@ -103,8 +116,8 @@
 
   .spec-cell {
     flex-grow: 1;
-    background-color: #1c1724;
-    border-color: #2e2540;
+    background-color: #221e2b;
+    border-color: #2d2a35;
     border-width: 0.1;
     border-radius: 2;
     padding: 1.5;
@@ -117,7 +130,7 @@
     font-size: 1.7;
     color: #474747;
     font-weight: 600;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 
@@ -127,75 +140,140 @@
     font-weight: 600;
   }
 
-  /* ── Divider ─────────────────────────────────────────────── */
+  /* ── Divider ──────────────────────────────────────────────── */
   .divider {
     height: 0.1;
-    background-color: #2a2035;
+    background-color: #2d2a35;
   }
 
-  /* ── CTA buttons ─────────────────────────────────────────── */
-  .options {
+  /* ── Coming soon section ──────────────────────────────────── */
+  .coming-hdr {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5;
+  }
+
+  .coming-label {
+    font-size: 1.8;
+    font-weight: 600;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: #474747;
+  }
+
+  .coming-rule {
+    flex-grow: 1;
+    height: 0.1;
+    background-color: #2d2a35;
+  }
+
+  .coming-sub {
+    font-size: 1.8;
+    color: #474747;
+  }
+
+  .soon-grid {
+    display: flex;
+    flex-direction: row;
+    gap: 1;
+  }
+
+  .soon-card {
+    flex-grow: 1;
+    background-color: #221e2b;
+    border-color: #2d2a35;
+    border-width: 0.1;
+    border-radius: 2.2;
+    padding: 1.8;
     display: flex;
     flex-direction: column;
-    gap: 0.8;
+    gap: 1.2;
   }
 
-  .opt-btn {
-    padding: 2;
-    border-radius: 2.2;
-    border-width: 0.12;
-    font-size: 2.4;
+  .soon-card-hdr {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .soon-name {
+    font-size: 2.6;
     font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-  }
-
-  .btn-primary {
-    background-color: #261e3a;
-    border-color: #9e87ce;
-    color: #c4b3e8;
-  }
-
-  .btn-primary:hover {
-    background-color: #32285a;
-    color: #d8ccf5;
-  }
-
-  .btn-secondary {
-    background-color: #1c1724;
-    border-color: #2e2540;
-    color: #a0a0a0;
-  }
-
-  .btn-secondary:hover {
-    background-color: #241d32;
     color: #f5f5f5;
   }
 
-  /* ── Soon (not yet available) buttons ───────────────────── */
-  .btn-soon {
-    background-color: #18181b;
-    border-color: #2a2035;
-    color: #52525b;
-    cursor: default;
+  .soon-tag {
+    font-size: 1.6;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9e87ce;
+    background-color: #261e3a;
+    border-color: #3d2e5a;
+    border-width: 0.1;
+    border-radius: 1;
+    padding: 0.4;
   }
 
-  /* ── Configure button ────────────────────────────────────── */
-  .btn-configure {
-    background-color: #1e1b4b;
-    border-color: #6366f1;
-    color: #a5b4fc;
+  .soon-visual {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.8;
+    height: 3;
   }
 
-  .btn-configure:hover {
-    background-color: #2d2a6e;
-    color: #c7d2fe;
+  .swatch {
+    width: 2.2;
+    height: 2.2;
+    border-radius: 1.1;
+    border-width: 0.1;
+    border-color: #474747;
+    flex-shrink: 0;
+  }
+
+  .swatch-lav { background-color: #9e87ce; }
+  .swatch-grn { background-color: #6eb89a; }
+  .swatch-ros { background-color: #e89ab4; }
+  .swatch-wht { background-color: #858585; }
+
+  .wave-text {
+    font-size: 2;
+    color: #6eb89a;
+    letter-spacing: 0.04em;
+  }
+
+  .soon-sub {
+    font-size: 1.9;
+    color: #858585;
+  }
+
+  /* ── Primary CTA ──────────────────────────────────────────── */
+  .cta-btn {
+    padding: 2.4;
+    border-radius: 2.2;
+    border-width: 0.12;
+    border-color: #9e87ce;
+    font-size: 2.8;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    background-color: #9e87ce;
+    color: #16121f;
+    letter-spacing: -0.01em;
+  }
+
+  .cta-btn:hover {
+    background-color: #b29de0;
+    border-color: #b29de0;
   }
 </style>
 
 <div class="card">
 
-  <!-- ── Name block ───────────────────────────────────────── -->
+  <!-- ── Header ───────────────────────────────────────────── -->
   <div class="name-block">
     <span class="eyebrow">Handpan</span>
     <span class="product-name">Panflow D Kurd</span>
@@ -208,7 +286,10 @@
       <span class="currency-label">USD</span>
       <span class="price">1,890</span>
     </div>
-    <span class="in-stock-badge">In stock</span>
+    <div class="stock-badge">
+      <div class="stock-dot"></div>
+      <span class="stock-text">In stock</span>
+    </div>
   </div>
 
   <!-- ── Spec grid ─────────────────────────────────────────── -->
@@ -237,15 +318,43 @@
 
   <div class="divider"></div>
 
-  <!-- ── CTA buttons ──────────────────────────────────────── -->
-  <div class="options">
-    <button class="opt-btn btn-soon" id="btn-color">Choose color  ·  soon</button>
-    <button class="opt-btn btn-soon" id="btn-scale">Choose scale  ·  soon</button>
+  <!-- ── Coming soon ──────────────────────────────────────── -->
+  <div class="coming-hdr">
+    <span class="coming-label">Coming soon</span>
+    <div class="coming-rule"></div>
+    <span class="coming-sub">Possible, just not yet</span>
   </div>
 
-  <div class="divider"></div>
+  <div class="soon-grid">
+    <!-- Color card -->
+    <div class="soon-card">
+      <div class="soon-card-hdr">
+        <span class="soon-name">Color</span>
+        <span class="soon-tag">Soon</span>
+      </div>
+      <div class="soon-visual">
+        <div class="swatch swatch-lav"></div>
+        <div class="swatch swatch-grn"></div>
+        <div class="swatch swatch-ros"></div>
+        <div class="swatch swatch-wht"></div>
+      </div>
+      <span class="soon-sub">Pick a finish tone</span>
+    </div>
 
-  <!-- ── Configure shortcut ───────────────────────────────── -->
-  <button class="opt-btn btn-configure" id="btn-configure">Configure Experience →</button>
+    <!-- Scale card -->
+    <div class="soon-card">
+      <div class="soon-card-hdr">
+        <span class="soon-name">Scale</span>
+        <span class="soon-tag">Soon</span>
+      </div>
+      <div class="soon-visual">
+        <span class="wave-text">D  Em  G  A</span>
+      </div>
+      <span class="soon-sub">Try other tunings</span>
+    </div>
+  </div>
+
+  <!-- ── Primary CTA ──────────────────────────────────────── -->
+  <button class="cta-btn" id="btn-configure">Configure Experience</button>
 
 </div>
