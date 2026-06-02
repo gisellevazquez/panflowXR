@@ -65,9 +65,9 @@
     background-color: #2a2633;
   }
 
-  .dock-icon {
-    font-size: 3.8;
-    color: #858585;
+  .dock-icon-img {
+    width: 4.5;
+    height: 4.5;
   }
 
   .dock-lbl {
@@ -90,13 +90,13 @@
 
   <!-- ── Product Info button ──────────────────────────────── -->
   <button class="dock-btn" id="launcher-product">
-    <span class="dock-icon">i</span>
+    <img class="dock-icon-img" src="./icons/fluent_info.svg" />
     <span class="dock-lbl">Product</span>
   </button>
 
   <!-- ── Settings button ──────────────────────────────────── -->
   <button class="dock-btn" id="launcher-settings">
-    <span class="dock-icon">*</span>
+    <img class="dock-icon-img" src="./icons/fluent_settings.svg" />
     <span class="dock-lbl">Settings</span>
   </button>
 

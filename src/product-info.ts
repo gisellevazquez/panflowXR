@@ -147,6 +147,12 @@ export class ProductInfoSystem extends createSystem({
     // Respect whatever state update() already decided — don't blindly hide.
     (doc.rootElement as any).setProperties({ display: this.prevVisible ? "flex" : "none" });
 
+    doc.getElementById("close-btn-product")?.addEventListener("click", () => {
+      productInfoManager.enabled = false;
+      this._setVisible(false);
+      this.prevVisible = false;
+    });
+
     doc.getElementById("btn-configure")?.addEventListener("click", () => {
       window.dispatchEvent(new Event("panflow-open-settings"));
     });

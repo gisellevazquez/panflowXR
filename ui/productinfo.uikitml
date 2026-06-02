@@ -12,11 +12,38 @@
     gap: 2.4;
   }
 
-  /* ── Header ───────────────────────────────────────────────── */
+  /* ── Header row (title + close) ──────────────────────────── */
+  .panel-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
   .name-block {
     display: flex;
     flex-direction: column;
     gap: 0.6;
+    flex-grow: 1;
+  }
+
+  .close-circle {
+    width: 7;
+    height: 7;
+    border-radius: 3.5;
+    background-color: #221e2b;
+    border-color: #2d2a35;
+    border-width: 0.12;
+    color: #858585;
+    font-size: 2.6;
+    text-align: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .close-circle:hover {
+    background-color: #2a2633;
+    color: #f5f5f5;
   }
 
   .eyebrow {
@@ -274,10 +301,13 @@
 <div class="card">
 
   <!-- ── Header ───────────────────────────────────────────── -->
-  <div class="name-block">
-    <span class="eyebrow">Handpan</span>
-    <span class="product-name">Panflow D Kurd</span>
-    <span class="tagline">Touch every note before you buy</span>
+  <div class="panel-header">
+    <div class="name-block">
+      <span class="eyebrow">Handpan</span>
+      <span class="product-name">Panflow D Kurd</span>
+      <span class="tagline">Touch every note before you buy</span>
+    </div>
+    <button class="close-circle" id="close-btn-product">×</button>
   </div>
 
   <!-- ── Price ────────────────────────────────────────────── -->
