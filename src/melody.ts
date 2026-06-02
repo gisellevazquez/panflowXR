@@ -45,9 +45,10 @@ export const melodyManager = {
 export class MelodySystem extends createSystem({
   handpans: { required: [Handpan] },
 }) {
-  private indicators:    Mesh[]                = [];
-  private mats:          MeshBasicMaterial[]   = [];
+  private indicators:      Mesh[]              = [];
+  private mats:            MeshBasicMaterial[] = [];
   private setupDone                            = false;
+  private pendingEntity:   Entity | null       = null; // set in qualify, built in update
 
   // Shared playback state
   private active        = false;
@@ -67,11 +68,11 @@ export class MelodySystem extends createSystem({
   };
 
   init() {
+    // Just record the entity — building Three.js objects inside a subscribe
+    // callback (which fires mid-ECS-update) can corrupt ECS state. We do
+    // the actual construction in the first safe update() frame instead.
     this.queries.handpans.subscribe("qualify", (entity: Entity) => {
-      if (!this.setupDone) {
-        this._buildIndicators(entity);
-        this.setupDone = true;
-      }
+      if (!this.pendingEntity) this.pendingEntity = entity;
     });
 
     document.addEventListener("handpan-note", this.onNote);
@@ -81,7 +82,12 @@ export class MelodySystem extends createSystem({
   }
 
   update(delta: number, _time: number) {
-    if (!this.setupDone) return;
+    // Build indicators on the first safe frame after the handpan qualifies
+    if (!this.setupDone) {
+      if (!this.pendingEntity) return;
+      this._buildIndicators(this.pendingEntity);
+      this.setupDone = true;
+    }
 
     if (melodyManager.playing && !this.active) {
       this._start();
@@ -107,8 +113,10 @@ export class MelodySystem extends createSystem({
   // ── Private ───────────────────────────────────────────────────────────────
 
   private _buildIndicators(entity: Entity): void {
+    const mesh = entity.object3D!;
+
     for (let i = 0; i < ZONE_OFFSETS.length; i++) {
-      // Each mesh gets its own geometry — never share geometry across meshes
+      // Separate geometry per mesh — never share geometry across instances
       const geo = new CircleGeometry(0.30, 32);
       const mat = new MeshBasicMaterial({
         color:       C_IDLE,
@@ -122,12 +130,7 @@ export class MelodySystem extends createSystem({
       ring.position.set(ox, oy + 0.04, oz);
       ring.rotation.x = -Math.PI / 2;
       ring.visible    = false;
-
-      // Use createTransformEntity so the ring is properly registered in the
-      // IWSDK scene graph — raw mesh.add() bypasses the ECS and can cause
-      // undefined behaviour with the framework's transform system.
-      this.world.createTransformEntity(ring, { parent: entity });
-
+      mesh.add(ring);
       this.indicators.push(ring);
       this.mats.push(mat);
     }
@@ -210,7 +213,6 @@ export class MelodySystem extends createSystem({
       this.guidedStep++;
 
       if (this.guidedStep >= MELODY.length) {
-        // Last note hit — let it ring briefly then stop
         this.advanceTimer = 1.8;
         window.dispatchEvent(new Event("melody-ended"));
         setTimeout(() => { melodyManager.playing = false; }, 1800);
@@ -241,7 +243,6 @@ export class MelodySystem extends createSystem({
       ? (this.noteIndex > 0 ? MELODY[this.noteIndex - 1].zone : -1)
       : (this.guidedStep < MELODY.length ? MELODY[this.guidedStep].zone : -1);
 
-    // In guided mode only pulse while waiting for user input
     if (activeZone < 0 || (melodyManager.mode === "guided" && !this.waitingTouch)) return;
 
     const pulse = 0.75 + 0.25 * Math.sin(this.pulseTime * 4);
