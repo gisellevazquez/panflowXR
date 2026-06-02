@@ -417,7 +417,7 @@
         <span class="pinch-text">Hold left pinch · 1.5 s to open this panel</span>
       </div>
     </div>
-    <button id="close-btn">×</button>
+    <button id="close-btn">X</button>
   </div>
 
   <div class="divider"></div>

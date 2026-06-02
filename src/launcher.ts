@@ -1,7 +1,6 @@
 import {
   createSystem,
   Group,
-  Entity,
   PanelUI,
   PanelDocument,
   PokeInteractable,
@@ -14,16 +13,16 @@ import {
 import { Handpan } from "./handpan.js";
 import { productInfoManager } from "./product-info.js";
 
-// Launcher hovers this many metres above the handpan centre
-const LAUNCHER_Y_OFFSET = 0.38;
+// Launcher sits this many metres below the handpan centre
+const LAUNCHER_Y_BELOW = 0.18;
 
 export class LauncherSystem extends createSystem({
   handpans: { required: [Handpan] },
 }) {
-  private panelEntity: Entity | null = null;
-  private positioned  = false;
+  private panelEntity: ReturnType<typeof this.world.createTransformEntity> | null = null;
+  private _hasHandpan = false;
 
-  // Pre-allocated scratch vectors
+  // Pre-allocated scratch vectors — never allocate in update()
   private _hpPos!:   Vector3;
   private _headPos!: Vector3;
 
@@ -56,9 +55,7 @@ export class LauncherSystem extends createSystem({
       }),
     );
 
-    // Wire document when loaded
-    const q = this.queries as any;
-    // Use configuredPanels pattern via a manual poll since we have no PanelDocument query
+    // Poll for panel document (no PanelDocument query in this system)
     const pollDoc = () => {
       if (!this.panelEntity) return;
       const doc = PanelDocument.data.document[this.panelEntity.index] as UIKitDocument | undefined;
@@ -69,31 +66,28 @@ export class LauncherSystem extends createSystem({
       }
     };
     setTimeout(pollDoc, 300);
-
-    // Position above handpan when XR session starts
-    const positionOnStart = () => {
-      if (this.positioned) return;
-      for (const e of this.queries.handpans.entities) {
-        e.object3D!.getWorldPosition(this._hpPos);
-        this.panelEntity?.object3D?.position.set(
-          this._hpPos.x,
-          this._hpPos.y + LAUNCHER_Y_OFFSET,
-          this._hpPos.z,
-        );
-        this.positioned = true;
-        break;
-      }
-    };
-    window.addEventListener("panflow-xr-started", positionOnStart);
-    this.cleanupFuncs.push(() => window.removeEventListener("panflow-xr-started", positionOnStart));
   }
 
   update(_delta: number, _time: number) {
-    if (!this.positioned || !this.panelEntity?.object3D || !this.player.head) return;
-    // Always face the player
+    if (!this.panelEntity?.object3D || !this.player.head) return;
+
+    // Track the handpan's current world position every frame
+    this._hasHandpan = false;
+    for (const e of this.queries.handpans.entities) {
+      e.object3D!.getWorldPosition(this._hpPos);
+      this._hasHandpan = true;
+      break;
+    }
+    if (!this._hasHandpan) return;
+
+    // Stick to the bottom-centre of the handpan
+    const obj = this.panelEntity.object3D;
+    obj.position.set(this._hpPos.x, this._hpPos.y - LAUNCHER_Y_BELOW, this._hpPos.z);
+
+    // Always face the player (Y-axis lock keeps panel upright)
     this.player.head.getWorldPosition(this._headPos);
-    this._headPos.y = this.panelEntity.object3D.position.y;
-    this.panelEntity.object3D.lookAt(this._headPos);
+    this._headPos.y = obj.position.y;
+    obj.lookAt(this._headPos);
   }
 
   // ── Private ────────────────────────────────────────────────────────────────
@@ -109,13 +103,11 @@ export class LauncherSystem extends createSystem({
       });
     }, 200);
 
-    // Product Info button — force-show the info panel
     doc.getElementById("launcher-product")?.addEventListener("click", () => {
       productInfoManager.enabled = true;
       window.dispatchEvent(new Event("panflow-open-product"));
     });
 
-    // Settings button — open the settings panel
     doc.getElementById("launcher-settings")?.addEventListener("click", () => {
       window.dispatchEvent(new Event("panflow-open-settings"));
     });

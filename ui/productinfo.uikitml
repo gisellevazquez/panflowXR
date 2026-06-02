@@ -307,7 +307,7 @@
       <span class="product-name">Panflow D Kurd</span>
       <span class="tagline">Touch every note before you buy</span>
     </div>
-    <button class="close-circle" id="close-btn-product">×</button>
+    <button class="close-circle" id="close-btn-product">X</button>
   </div>
 
   <!-- ── Price ────────────────────────────────────────────── -->
