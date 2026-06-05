@@ -325,6 +325,8 @@ export class MenuSystem extends createSystem({
     });
 
     // ─ Demo mode pills ────────────────────────────────────────────────────
+    // TEMPORARILY DISABLED: Melody system is not working yet
+    /*
     const setDemoMode = (mode: MelodyMode) => {
       melodyManager.mode = mode;
       const freeBtn    = doc.getElementById("demo-mode-free")    as any;
@@ -360,6 +362,7 @@ export class MenuSystem extends createSystem({
       melodyManager.playing = false;
       setDemoBtn(false);
     });
+    */
 
     // ─ Recording controls ─────────────────────────────────────────────────
     const recRecordBtn = doc.getElementById("rec-record") as any;

@@ -541,6 +541,7 @@
   <div class="divider"></div>
 
   <!-- ── Demo ─────────────────────────────────────────────── -->
+  <!-- TEMPORARILY DISABLED: Melody system is not working yet
   <div class="demo-card">
     <div class="demo-header">
       <span class="demo-title">Take it for a spin</span>
@@ -554,6 +555,7 @@
       <button class="demo-play-btn" id="demo-play">▶  Play Demo</button>
     </div>
   </div>
+  -->
 
   <div class="divider"></div>
 
