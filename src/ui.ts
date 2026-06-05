@@ -390,12 +390,12 @@ export class MenuSystem extends createSystem({
 
     updateRecUI();
 
-    doc.getElementById("rec-record")?.addEventListener("click", () => {
+    recRecordBtn?.addEventListener("click", () => {
       recordingManager.toggleRecording();
       updateRecUI();
     });
 
-    doc.getElementById("rec-play")?.addEventListener("click", () => {
+    recPlayBtn?.addEventListener("click", () => {
       if (recordingManager.isPlaying) {
         recordingManager.stopPlayback();
       } else {

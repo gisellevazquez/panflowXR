@@ -76,6 +76,7 @@
     color: #858585;
     text-align: center;
   }
+
 </style>
 
 <div class="dock">
@@ -99,5 +100,6 @@
     <img class="dock-icon-img" src="./icons/fluent_settings.svg" />
     <span class="dock-lbl">Settings</span>
   </button>
+
 
 </div>
