@@ -57,6 +57,15 @@ export class ProductInfoSystem extends createSystem({
       }),
     );
 
+    // Launcher "Product" button force-shows this panel regardless of proximity
+    const openHandler = () => {
+      this.prevVisible = false; // force re-evaluation on next update
+      this._setVisible(true);
+      this.prevVisible = true;
+    };
+    window.addEventListener("panflow-open-product", openHandler);
+    this.cleanupFuncs.push(() => window.removeEventListener("panflow-open-product", openHandler));
+
     // Wire document once PanelUI has loaded its config
     this.queries.configuredPanels.subscribe("qualify", (entity: Entity) => {
       if (entity !== this.panelEntity || this.documentWiredUp) return;
@@ -137,6 +146,14 @@ export class ProductInfoSystem extends createSystem({
     }
     // Respect whatever state update() already decided — don't blindly hide.
     (doc.rootElement as any).setProperties({ display: this.prevVisible ? "flex" : "none" });
+
+    const closeBtn = doc.getElementById("close-btn-product") as any;
+    closeBtn?.setProperties({ text: "X", color: 0xa0a0a0 });
+    closeBtn?.addEventListener("click", () => {
+      productInfoManager.enabled = false;
+      this._setVisible(false);
+      this.prevVisible = false;
+    });
 
     doc.getElementById("btn-configure")?.addEventListener("click", () => {
       window.dispatchEvent(new Event("panflow-open-settings"));

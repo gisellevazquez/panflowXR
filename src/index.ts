@@ -20,6 +20,7 @@ import { ProductInfoSystem }      from "./product-info.js";
 import { MelodySystem }           from "./melody.js";
 import { RecordingSystem, recordingManager } from "./recording-system.js";
 import { RecordingUISystem }               from "./recording-ui.js";
+import { LauncherSystem }         from "./launcher.js";
 
 const assets: AssetManifest = {
   handpan: { url: "./gltf/handpan/hand_pan.glb", type: AssetType.GLTF, priority: "critical" },
@@ -145,4 +146,5 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   world.registerSystem(MelodySystem);
   world.registerSystem(RecordingSystem);
   world.registerSystem(RecordingUISystem);
+  world.registerSystem(LauncherSystem);
 });

@@ -1,0 +1,103 @@
+<style>
+  /* ── Dock ────────────────────────────────────────────────── */
+  .dock {
+    width: 14;
+    padding: 2;
+    background-color: #16121f;
+    border-color: #2d2a35;
+    border-width: 0.12;
+    border-radius: 3.5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.8;
+  }
+
+  /* ── Brand mark ───────────────────────────────────────────── */
+  .brand-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8;
+  }
+
+  .brand-circle {
+    width: 6;
+    height: 6;
+    border-radius: 3;
+    background-color: #9e87ce;
+    border-width: 0;
+  }
+
+  .brand-label {
+    font-size: 1.6;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #474747;
+    text-align: center;
+  }
+
+  /* ── Divider ──────────────────────────────────────────────── */
+  .dock-divider {
+    height: 0.1;
+    background-color: #2d2a35;
+    width: 8;
+  }
+
+  /* ── Dock buttons ─────────────────────────────────────────── */
+  .dock-btn {
+    width: 10;
+    height: 10;
+    border-radius: 2.2;
+    background-color: #221e2b;
+    border-color: #2d2a35;
+    border-width: 0.12;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8;
+  }
+
+  .dock-btn:hover {
+    background-color: #2a2633;
+  }
+
+  .dock-icon-img {
+    width: 4.5;
+    height: 4.5;
+  }
+
+  .dock-lbl {
+    font-size: 1.8;
+    font-weight: 600;
+    color: #858585;
+    text-align: center;
+  }
+</style>
+
+<div class="dock">
+
+  <!-- ── Brand mark ───────────────────────────────────────── -->
+  <div class="brand-wrap">
+    <div class="brand-circle"></div>
+    <span class="brand-label">Panflow</span>
+  </div>
+
+  <div class="dock-divider"></div>
+
+  <!-- ── Product Info button ──────────────────────────────── -->
+  <button class="dock-btn" id="launcher-product">
+    <img class="dock-icon-img" src="./icons/fluent_info.svg" />
+    <span class="dock-lbl">Product</span>
+  </button>
+
+  <!-- ── Settings button ──────────────────────────────────── -->
+  <button class="dock-btn" id="launcher-settings">
+    <img class="dock-icon-img" src="./icons/fluent_settings.svg" />
+    <span class="dock-lbl">Settings</span>
+  </button>
+
+</div>
