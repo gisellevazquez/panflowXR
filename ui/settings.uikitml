@@ -344,11 +344,21 @@
     font-weight: 700;
     text-align: center;
     cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 1;
   }
 
   .rec-action-btn:hover {
     background-color: #27272a;
     color: #fafafa;
+  }
+
+  .rec-action-btn img {
+    width: 3;
+    height: 3;
   }
 
   .rec-status-lbl {
@@ -566,16 +576,9 @@
       <span class="rec-status-lbl" id="rec-status">Ready</span>
     </div>
     <div class="preset-row">
-      <button class="rec-action-btn" id="rec-record">● Record</button>
-      <button class="rec-action-btn" id="rec-play">▶ Play</button>
+      <button class="rec-action-btn" id="rec-record"><img src="./icons/play-regular.svg" /><span>Record</span></button>
+      <button class="rec-action-btn" id="rec-play"><img src="./icons/stop-regular.svg" /><span>Play</span></button>
     </div>
-  </div>
-
-  <div class="divider"></div>
-
-  <!-- ── Pinch hint ───────────────────────────────────────── -->
-  <div class="pinch-hint">
-    <span class="hint-text">✌  Hold left pinch for 1.5 s to open this panel</span>
   </div>
 
 </div>

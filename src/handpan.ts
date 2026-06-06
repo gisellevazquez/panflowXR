@@ -46,7 +46,7 @@ const ZONE_RADII: number[] = [
   0.11, // 7
   0.09, // 8
 ];
-const COOLDOWN_MS = 600;   // minimum ms between re-triggers of the same zone
+const COOLDOWN_MS = 150;   // minimum ms between re-triggers of the same zone — allows rapid tapping
 
 export const Handpan = createComponent("Handpan", {});
 
