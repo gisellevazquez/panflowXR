@@ -20,6 +20,7 @@ import { ProductInfoSystem }      from "./product-info.js";
 import { MelodySystem }           from "./melody.js";
 import { RecordingSystem, recordingManager } from "./recording-system.js";
 import { LauncherSystem }         from "./launcher.js";
+import { VREnvironmentSystem }    from "./vr-environment.js";
 
 const assets: AssetManifest = {
   handpan: { url: "./gltf/handpan/hand_pan.glb", type: AssetType.GLTF, priority: "critical" },
@@ -151,4 +152,9 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   world.registerSystem(MelodySystem);
   world.registerSystem(RecordingSystem);
   world.registerSystem(LauncherSystem);
+
+  // VR only: cozy minimalista environment (warm dome gradient + IBL)
+  if (isVrMode) {
+    world.registerSystem(VREnvironmentSystem);
+  }
 });
