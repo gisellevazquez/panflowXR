@@ -72,6 +72,11 @@
       border-radius: 999px; color: #ffffff; transform: translateY(-.35em);
     }
 
+    .enter-btn-group {
+      display: flex; gap: 20px; align-items: center; justify-content: center;
+      flex-wrap: wrap;
+    }
+
     .enter-btn {
       appearance: none; border: 1px solid rgba(31,42,34,.28); cursor: pointer;
       font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px;
@@ -210,10 +215,16 @@
       </div>
       <h1 class="title">Panflow<span class="xr">XR</span></h1>
     </div>
-    <button class="enter-btn" id="enterBtn">
-      <span>Enter Experience</span>
-      <span class="arrow">→</span>
-    </button>
+    <div class="enter-btn-group">
+      <button class="enter-btn" id="enterArBtn">
+        <span>Enter AR</span>
+        <span class="arrow">→</span>
+      </button>
+      <button class="enter-btn" id="enterVrBtn">
+        <span>Enter VR</span>
+        <span class="arrow">→</span>
+      </button>
+    </div>
 
     <!-- ── Seller platform pitch ─────────────────────────────── -->
     <div class="platform-section">

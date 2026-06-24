@@ -219,15 +219,18 @@ function animate(): void {
   requestAnimationFrame(animate);
 }
 
-// ── Button ────────────────────────────────────────────────────────────────────
-const enterBtn    = document.getElementById('enterBtn')    as HTMLButtonElement;
+// ── Buttons ───────────────────────────────────────────────────────────────────
+const enterArBtn  = document.getElementById('enterArBtn')  as HTMLButtonElement;
+const enterVrBtn  = document.getElementById('enterVrBtn')  as HTMLButtonElement;
 const loadingEl   = document.getElementById('landing-loading') as HTMLDivElement;
 const landingEl   = document.getElementById('landing-ui')  as HTMLDivElement;
 const landingScene = document.getElementById('landing-scene') as HTMLDivElement;
 
-enterBtn.addEventListener('click', () => {
-  enterBtn.disabled = true;
-  enterBtn.innerHTML = '<span>Entering experience…</span><span class="arrow">◔</span>';
+const handleEnter = (mode: 'ar' | 'vr') => {
+  localStorage.setItem('xr-mode', mode);
+  const btn = mode === 'ar' ? enterArBtn : enterVrBtn;
+  btn.disabled = true;
+  btn.innerHTML = '<span>Entering experience…</span><span class="arrow">◔</span>';
   loadingEl.classList.remove('hidden');
 
   const tryEnter = () => {
@@ -238,7 +241,10 @@ enterBtn.addEventListener('click', () => {
     }
   };
   tryEnter();
-});
+};
+
+enterArBtn.addEventListener('click', () => handleEnter('ar'));
+enterVrBtn.addEventListener('click', () => handleEnter('vr'));
 
 // Fade out landing when XR session starts
 window.addEventListener('panflow-xr-started', () => {

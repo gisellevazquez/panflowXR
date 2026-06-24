@@ -54,26 +54,32 @@ const assets: AssetManifest = {
   bowl_15: { url: "./audio/bubbles/Kasper - Singing Bowls - 34 Bowl 4 Articulation 4 Microphone 1 BG.mp3", type: AssetType.Audio, priority: "background" },
 };
 
+// Read XR mode preference from landing page (default: AR)
+const xrMode = (localStorage.getItem("xr-mode") as "ar" | "vr" | null) ?? "ar";
+const isVrMode = xrMode === "vr";
+
 World.create(document.getElementById("scene-container") as HTMLDivElement, {
   assets,
   render: { stencil: true }, // required for IWSDK AnimatedHand ghost-hand visuals
   xr: {
-    sessionMode: SessionMode.ImmersiveAR,
+    sessionMode: isVrMode ? SessionMode.ImmersiveVR : SessionMode.ImmersiveAR,
     offer: "none",
-    features: {
-      handTracking:   { required: true },
-      anchors:        true,
-      hitTest:        false,
-      planeDetection: true,
-      meshDetection:  false,
-      layers:         true,
-    },
+    features: isVrMode
+      ? { handTracking: { required: true }, layers: true }
+      : {
+          handTracking:   { required: true },
+          anchors:        true,
+          hitTest:        false,
+          planeDetection: true,
+          meshDetection:  false,
+          layers:         true,
+        },
   },
   features: {
-    locomotion:          false,
+    locomotion:          isVrMode, // VR: player moves virtually; AR: player walks physically
     grabbing:            true,
-    physics:             false,
-    sceneUnderstanding:  true,
+    physics:             isVrMode, // VR: physics; AR: static environment
+    sceneUnderstanding:  !isVrMode, // AR only: detect real surfaces
     environmentRaycast:  false,
   },
 }).then((world) => {
