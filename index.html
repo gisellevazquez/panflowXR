@@ -177,6 +177,16 @@
     }
     @keyframes pulse { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1.3)} }
 
+    /* ── XRCC Competition Logo ─────────────────────────────────── */
+    .xrcc-logo {
+      position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+      z-index: 10; pointer-events: none;
+    }
+    .xrcc-logo img {
+      height: 60px; width: auto; opacity: 0.9;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,.2));
+    }
+
     @media (max-width: 720px) {
       .hud { font-size: 9px; }
       .hud.tl,.hud.bl { left: 16px; }
@@ -186,6 +196,7 @@
       .corner.tl,.corner.bl { left: 12px; }
       .corner.tr,.corner.br { right: 12px; }
       .title .xr { display: block; margin: 8px auto 0; transform: none; }
+      .xrcc-logo img { height: 50px; }
     }
   </style>
 </head>
@@ -257,6 +268,11 @@
       </a>
     </div>
   </main>
+</div>
+
+<!-- ── XRCC Competition Logo ────────────────────────────────────────────── -->
+<div class="xrcc-logo">
+  <img src="./textures/xrcc-logo-2026 1 (1).png" alt="XRCC 2026" />
 </div>
 
 <!-- ── Loading overlay ───────────────────────────────────────────────────── -->
