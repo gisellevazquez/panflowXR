@@ -11,7 +11,8 @@ import {
   Object3D,
 } from "@iwsdk/core";
 
-import { Handpan, HandpanSystem, handpanLockManager } from "./handpan.js";
+import { Handpan, HandpanSystem, handpanLockManager, setCustomAudioUrls } from "./handpan.js";
+import { fetchLatestInstrument } from "./instrument-loader.js";
 import { BubbleSystem }           from "./bubbles.js";
 import { reverbManager }          from "./reverb.js";
 import { ambientManager }         from "./ambient.js";
@@ -59,43 +60,49 @@ const assets: AssetManifest = {
 const urlParams = new URLSearchParams(window.location.search);
 const xrMode = (urlParams.get("mode") as "ar" | "vr" | null) ?? (localStorage.getItem("xr-mode") as "ar" | "vr" | null) ?? "ar";
 const isVrMode = xrMode === "vr";
-
-// Save preference for next visit
 localStorage.setItem("xr-mode", xrMode);
 
-World.create(document.getElementById("scene-container") as HTMLDivElement, {
-  assets,
-  render: { stencil: true }, // required for IWSDK AnimatedHand ghost-hand visuals
-  xr: {
-    sessionMode: isVrMode ? SessionMode.ImmersiveVR : SessionMode.ImmersiveAR,
-    offer: "none",
-    features: isVrMode
-      ? { handTracking: { required: true }, layers: true }
-      : {
-          handTracking:   { required: true },
-          anchors:        true,
-          hitTest:        false,
-          planeDetection: true,
-          meshDetection:  false,
-          layers:         true,
-        },
-  },
-  features: {
-    locomotion:          isVrMode, // VR: player moves virtually; AR: player walks physically
-    grabbing:            true,
-    physics:             isVrMode, // VR: physics; AR: static environment
-    sceneUnderstanding:  !isVrMode, // AR only: detect real surfaces
-    environmentRaycast:  false,
-  },
-}).then((world) => {
+(async () => {
+  // Check for a custom instrument uploaded by a store owner — fallback to handpan if none
+  const customInstrument = await fetchLatestInstrument();
+  if (customInstrument?.audio_urls) {
+    setCustomAudioUrls(customInstrument.audio_urls);
+  }
+  if (customInstrument?.model_url) {
+    assets.custom_instrument = { url: customInstrument.model_url, type: AssetType.GLTF, priority: "critical" };
+  }
 
-  // ── Reverb & ambient ───────────────────────────────────────────────────────
-  // AudioContext requires a user gesture — XR sessionstart guarantees one.
+  const world = await World.create(document.getElementById("scene-container") as HTMLDivElement, {
+    assets,
+    render: { stencil: true }, // required for IWSDK AnimatedHand ghost-hand visuals
+    xr: {
+      sessionMode: isVrMode ? SessionMode.ImmersiveVR : SessionMode.ImmersiveAR,
+      offer: "none",
+      features: isVrMode
+        ? { handTracking: { required: true }, layers: true }
+        : {
+            handTracking:   { required: true },
+            anchors:        true,
+            hitTest:        false,
+            planeDetection: true,
+            meshDetection:  false,
+            layers:         true,
+          },
+    },
+    features: {
+      locomotion:          isVrMode,
+      grabbing:            true,
+      physics:             isVrMode,
+      sceneUnderstanding:  !isVrMode,
+      environmentRaycast:  false,
+    },
+  });
+
+  // ── Reverb & ambient ─────────────────────────────────────────────────────
   const initAudio = () => {
     if (reverbManager.audioContext) return;
     const ok = reverbManager.init();
     if (ok) {
-      // Ambient goes directly to destination — reverb is reserved for handpan notes
       ambientManager.init(
         reverbManager.audioContext,
         (node) => node.connect(reverbManager.audioContext.destination),
@@ -108,18 +115,15 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
     window.dispatchEvent(new Event("panflow-xr-started"));
   });
 
-  // Exposed for the landing page "Enter Experience" button
   (window as any).panflowEnterXR = () => world.launchXR();
-
-  // Exposed for manual testing of the recording feature
   (window as any).panflowRecording = recordingManager;
 
-  // ── Handpan ───────────────────────────────────────────────────────────────
-  const gltf = AssetManager.getGLTF("handpan");
+  // ── Instrument model — custom upload or default handpan ──────────────────
+  const gltfKey = customInstrument?.model_url ? "custom_instrument" : "handpan";
+  const gltf = AssetManager.getGLTF(gltfKey);
   let handpanMesh: Object3D;
 
   if (gltf) {
-    // Clone so IWSDK's asset cache doesn't share the same scene reference
     handpanMesh = gltf.scene.clone();
   } else {
     const geo = new CylinderGeometry(0.28, 0.28, 0.06, 48);
@@ -127,19 +131,13 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
     handpanMesh = new Mesh(geo, mat);
   }
 
-  // Hip height, ~35 cm in front — start at a manageable size
   handpanMesh.position.set(0, 0.85, -0.35);
   handpanMesh.scale.setScalar(0.35);
 
-  // Explicit world.sceneEntity parent — anchors in world space, not player rig
   const handpanEntity = world
     .createTransformEntity(handpanMesh, { parent: world.sceneEntity })
     .addComponent(Handpan)
-    .addComponent(OneHandGrabbable, {
-      // Grip button (squeeze) to reposition — finger pokes play notes without grabbing
-      rotate:    true,
-      translate: true,
-    });
+    .addComponent(OneHandGrabbable, { rotate: true, translate: true });
 
   handpanLockManager.entity = handpanEntity;
 
@@ -157,8 +155,7 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   world.registerSystem(RecordingSystem);
   world.registerSystem(LauncherSystem);
 
-  // VR only: cozy minimalista environment (warm dome gradient + IBL)
   if (isVrMode) {
     world.registerSystem(VREnvironmentSystem);
   }
-});
+})();
