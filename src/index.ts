@@ -62,41 +62,34 @@ const xrMode = (urlParams.get("mode") as "ar" | "vr" | null) ?? (localStorage.ge
 const isVrMode = xrMode === "vr";
 localStorage.setItem("xr-mode", xrMode);
 
-(async () => {
-  // Check for a custom instrument uploaded by a store owner — fallback to handpan if none
-  const customInstrument = await fetchLatestInstrument();
-  if (customInstrument?.audio_urls) {
-    setCustomAudioUrls(customInstrument.audio_urls);
-  }
-  if (customInstrument?.model_url) {
-    assets.custom_instrument = { url: customInstrument.model_url, type: AssetType.GLTF, priority: "critical" };
-  }
+// Fetch custom instrument in background — does not block world creation
+const instrumentPromise = fetchLatestInstrument();
 
-  const world = await World.create(document.getElementById("scene-container") as HTMLDivElement, {
-    assets,
-    render: { stencil: true }, // required for IWSDK AnimatedHand ghost-hand visuals
-    xr: {
-      sessionMode: isVrMode ? SessionMode.ImmersiveVR : SessionMode.ImmersiveAR,
-      offer: "none",
-      features: isVrMode
-        ? { handTracking: { required: true }, layers: true }
-        : {
-            handTracking:   { required: true },
-            anchors:        true,
-            hitTest:        false,
-            planeDetection: true,
-            meshDetection:  false,
-            layers:         true,
-          },
-    },
-    features: {
-      locomotion:          isVrMode,
-      grabbing:            true,
-      physics:             isVrMode,
-      sceneUnderstanding:  !isVrMode,
-      environmentRaycast:  false,
-    },
-  });
+World.create(document.getElementById("scene-container") as HTMLDivElement, {
+  assets,
+  render: { stencil: true },
+  xr: {
+    sessionMode: isVrMode ? SessionMode.ImmersiveVR : SessionMode.ImmersiveAR,
+    offer: "none",
+    features: isVrMode
+      ? { handTracking: { required: true }, layers: true }
+      : {
+          handTracking:   { required: true },
+          anchors:        true,
+          hitTest:        false,
+          planeDetection: true,
+          meshDetection:  false,
+          layers:         true,
+        },
+  },
+  features: {
+    locomotion:          isVrMode,
+    grabbing:            true,
+    physics:             isVrMode,
+    sceneUnderstanding:  !isVrMode,
+    environmentRaycast:  false,
+  },
+}).then((world) => {
 
   // ── Reverb & ambient ─────────────────────────────────────────────────────
   const initAudio = () => {
@@ -115,12 +108,12 @@ localStorage.setItem("xr-mode", xrMode);
     window.dispatchEvent(new Event("panflow-xr-started"));
   });
 
+  // Set panflowEnterXR immediately — custom instrument loads in background
   (window as any).panflowEnterXR = () => world.launchXR();
   (window as any).panflowRecording = recordingManager;
 
-  // ── Instrument model — custom upload or default handpan ──────────────────
-  const gltfKey = customInstrument?.model_url ? "custom_instrument" : "handpan";
-  const gltf = AssetManager.getGLTF(gltfKey);
+  // ── Handpan (default) ────────────────────────────────────────────────────
+  const gltf = AssetManager.getGLTF("handpan");
   let handpanMesh: Object3D;
 
   if (gltf) {
@@ -146,6 +139,13 @@ localStorage.setItem("xr-mode", xrMode);
     console.log(`Handpan zone ${index} triggered`);
   });
 
+  // Apply custom audio URLs once instrument fetch resolves
+  instrumentPromise.then((instrument) => {
+    if (instrument?.audio_urls) {
+      setCustomAudioUrls(instrument.audio_urls);
+    }
+  });
+
   // ── Systems ───────────────────────────────────────────────────────────────
   world.registerSystem(HandpanSystem);
   world.registerSystem(BubbleSystem);
@@ -158,4 +158,4 @@ localStorage.setItem("xr-mode", xrMode);
   if (isVrMode) {
     world.registerSystem(VREnvironmentSystem);
   }
-})();
+});
