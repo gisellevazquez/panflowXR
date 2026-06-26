@@ -11,8 +11,9 @@ export class VREnvironmentSystem extends createSystem({}) {
       if (!level) return;
 
       // Use custom skybox image as equirectangular dome
+      const baseUrl = ((import.meta as any).env?.BASE_URL) || "./";
       level.addComponent(DomeTexture, {
-        src: "/textures/Skybox.png",
+        src: `${baseUrl}textures/Skybox.png`,
         intensity: 1.0,
       });
 
