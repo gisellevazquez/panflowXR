@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@iwsdk/core": "0.3.1",
-    "@supabase/supabase-js": "^2.108.2",
     "iwer": "^2.2.1",
     "three": "npm:super-three@0.181.0"
   },

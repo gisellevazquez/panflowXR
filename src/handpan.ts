@@ -48,15 +48,6 @@ const ZONE_RADII: number[] = [
 ];
 const COOLDOWN_MS = 150;   // minimum ms between re-triggers of the same zone — allows rapid tapping
 
-// Overridden at runtime when a store owner has uploaded a custom instrument
-let _customAudioUrls: (string | null)[] = [];
-export function setCustomAudioUrls(urls: (string | null)[]): void {
-  _customAudioUrls = urls;
-}
-export function getAudioSrcs(): string[] {
-  return NOTE_SRCS.map((defaultUrl, i) => _customAudioUrls[i] ?? defaultUrl);
-}
-
 export const Handpan = createComponent("Handpan", {});
 
 /** Shared note player — populated by HandpanSystem once buffers are loaded. */
@@ -138,7 +129,7 @@ export class HandpanSystem extends createSystem({
   }
 
   private _loadBuffers(): void {
-    getAudioSrcs().forEach((src, i) => {
+    NOTE_SRCS.forEach((src, i) => {
       reverbManager.loadBuffer(src).then((buf) => {
         this.noteBuffers[i] = buf;
         handpanAudio.buffers[i] = buf;

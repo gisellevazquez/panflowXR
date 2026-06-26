@@ -11,8 +11,7 @@ import {
   Object3D,
 } from "@iwsdk/core";
 
-import { Handpan, HandpanSystem, handpanLockManager, setCustomAudioUrls } from "./handpan.js";
-import { fetchLatestInstrument } from "./instrument-loader.js";
+import { Handpan, HandpanSystem, handpanLockManager } from "./handpan.js";
 import { BubbleSystem }           from "./bubbles.js";
 import { reverbManager }          from "./reverb.js";
 import { ambientManager }         from "./ambient.js";
@@ -62,9 +61,6 @@ const xrMode = (urlParams.get("mode") as "ar" | "vr" | null) ?? (localStorage.ge
 const isVrMode = xrMode === "vr";
 localStorage.setItem("xr-mode", xrMode);
 
-// Fetch custom instrument in background — does not block world creation
-const instrumentPromise = fetchLatestInstrument();
-
 World.create(document.getElementById("scene-container") as HTMLDivElement, {
   assets,
   render: { stencil: true },
@@ -108,12 +104,10 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
     window.dispatchEvent(new Event("panflow-xr-started"));
   });
 
-  // Set panflowEnterXR immediately — custom instrument loads in background
-  (window as any).panflowEnterXR = () => world.launchXR();
-  (window as any).panflowXRMode   = xrMode; // lets landing.ts know which mode was loaded
+  (window as any).panflowEnterXR  = () => world.launchXR();
   (window as any).panflowRecording = recordingManager;
 
-  // ── Handpan (default) ────────────────────────────────────────────────────
+  // ── Handpan ──────────────────────────────────────────────────────────────
   const gltf = AssetManager.getGLTF("handpan");
   let handpanMesh: Object3D;
 
@@ -138,13 +132,6 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   document.addEventListener("handpan-note", (e: Event) => {
     const { index } = (e as CustomEvent).detail;
     console.log(`Handpan zone ${index} triggered`);
-  });
-
-  // Apply custom audio URLs once instrument fetch resolves
-  instrumentPromise.then((instrument) => {
-    if (instrument?.audio_urls) {
-      setCustomAudioUrls(instrument.audio_urls);
-    }
   });
 
   // ── Systems ───────────────────────────────────────────────────────────────

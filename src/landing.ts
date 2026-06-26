@@ -239,20 +239,12 @@ const triggerXR = () => {
 };
 
 const handleEnter = (mode: 'ar' | 'vr') => {
-  // Compare against the mode the world was actually loaded with.
-  // panflowXRMode is set by index.ts once World.create resolves.
-  // WebXR requires a direct user gesture — never auto-trigger after redirect.
-  const loadedMode = (window as any).panflowXRMode as string | undefined;
-  if (loadedMode === mode) {
-    triggerXR(); // mode matches → enter directly from this click gesture
-  } else {
-    // Mode mismatch: save preference and reload so index.ts creates the right world.
-    localStorage.setItem('xr-mode', mode);
-    const url = new URL(window.location.href);
-    url.searchParams.set('mode', mode);
-    window.location.href = url.toString();
-    // On the reloaded page the user will click the button once more (now a match).
-  }
+  localStorage.setItem('xr-mode', mode);
+  const btn = mode === 'ar' ? enterArBtn : enterVrBtn;
+  btn.disabled = true;
+  btn.innerHTML = '<span>Entering experience…</span><span class="arrow">◔</span>';
+  loadingEl.classList.remove('hidden');
+  triggerXR();
 };
 
 enterArBtn.addEventListener('click', () => handleEnter('ar'));
