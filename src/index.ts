@@ -55,9 +55,13 @@ const assets: AssetManifest = {
   bowl_15: { url: "./audio/bubbles/Kasper - Singing Bowls - 34 Bowl 4 Articulation 4 Microphone 1 BG.mp3", type: AssetType.Audio, priority: "background" },
 };
 
-// Read XR mode preference from landing page (default: AR)
-const xrMode = (localStorage.getItem("xr-mode") as "ar" | "vr" | null) ?? "ar";
+// Read XR mode from URL query param or localStorage (default: AR)
+const urlParams = new URLSearchParams(window.location.search);
+const xrMode = (urlParams.get("mode") as "ar" | "vr" | null) ?? (localStorage.getItem("xr-mode") as "ar" | "vr" | null) ?? "ar";
 const isVrMode = xrMode === "vr";
+
+// Save preference for next visit
+localStorage.setItem("xr-mode", xrMode);
 
 World.create(document.getElementById("scene-container") as HTMLDivElement, {
   assets,

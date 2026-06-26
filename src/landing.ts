@@ -227,13 +227,10 @@ const landingEl   = document.getElementById('landing-ui')  as HTMLDivElement;
 const landingScene = document.getElementById('landing-scene') as HTMLDivElement;
 
 const handleEnter = (mode: 'ar' | 'vr') => {
-  // Save mode and reload page so index.ts reads the fresh localStorage value
-  localStorage.setItem('xr-mode', mode);
-
-  // Brief delay to ensure localStorage is synced before reload
-  setTimeout(() => {
-    window.location.reload();
-  }, 50);
+  // Redirect to same page with mode query param so index.ts reads it
+  const url = new URL(window.location.href);
+  url.searchParams.set('mode', mode);
+  window.location.href = url.toString();
 };
 
 enterArBtn.addEventListener('click', () => handleEnter('ar'));
