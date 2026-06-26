@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panflow XR — Upload Instrument</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; min-height: 100%;
+      background: #0a0f0c; color: #e8ede9;
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page { max-width: 640px; margin: 0 auto; padding: 60px 24px 80px; }
+
+    .header { margin-bottom: 48px; }
+    .logo {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      letter-spacing: .4em; text-transform: uppercase;
+      color: rgba(232,237,233,.4); margin-bottom: 32px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: #4a7a5c; box-shadow: 0 0 8px #4a7a5c;
+    }
+    h1 {
+      font-size: 32px; font-weight: 700; letter-spacing: -.03em;
+      color: #f0f4f1; margin: 0 0 8px;
+    }
+    .subtitle {
+      font-size: 14px; color: rgba(232,237,233,.5); margin: 0;
+    }
+
+    .card {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px; padding: 32px; margin-bottom: 16px;
+    }
+    .card-title {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: .35em; text-transform: uppercase;
+      color: #4a7a5c; margin: 0 0 20px;
+    }
+
+    .field { margin-bottom: 20px; }
+    label {
+      display: block; font-size: 12px; font-weight: 500;
+      color: rgba(232,237,233,.6); margin-bottom: 8px;
+      letter-spacing: .02em;
+    }
+    input[type="text"] {
+      width: 100%; padding: 12px 16px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px; color: #f0f4f1; font-size: 14px;
+      font-family: 'Inter', sans-serif; outline: none;
+      transition: border-color .2s;
+    }
+    input[type="text"]:focus { border-color: #4a7a5c; }
+    input[type="text"]::placeholder { color: rgba(232,237,233,.25); }
+
+    .file-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 8px; cursor: pointer; transition: all .2s;
+    }
+    .file-row:hover { border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.07); }
+    .file-row.has-file { border-color: rgba(74,122,92,.5); background: rgba(74,122,92,.07); }
+    .file-row input[type="file"] { display: none; }
+    .file-label-text { font-size: 13px; color: rgba(232,237,233,.5); flex: 1; }
+    .file-row.has-file .file-label-text { color: #a8d4b6; }
+    .file-icon {
+      font-size: 16px; width: 28px; text-align: center;
+      color: rgba(232,237,233,.3);
+    }
+    .file-row.has-file .file-icon { color: #4a7a5c; }
+    .file-size { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(232,237,233,.3); }
+
+    .zones-grid { display: flex; flex-direction: column; gap: 8px; }
+    .zone-row { position: relative; }
+    .zone-num {
+      font-family: 'JetBrains Mono', monospace; font-size: 9px;
+      color: #4a7a5c; letter-spacing: .1em; min-width: 40px;
+    }
+
+    .progress-bar {
+      height: 2px; background: rgba(255,255,255,.08);
+      border-radius: 99px; margin-top: 6px; overflow: hidden;
+      display: none;
+    }
+    .progress-bar.visible { display: block; }
+    .progress-fill {
+      height: 100%; background: #4a7a5c;
+      border-radius: 99px; width: 0%;
+      transition: width .3s;
+    }
+
+    .zone-count-row {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+    }
+    .zone-count-row label { margin: 0; }
+    .zone-count-input {
+      width: 64px; padding: 8px 12px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px; color: #f0f4f1; font-size: 14px;
+      font-family: 'JetBrains Mono', monospace; outline: none; text-align: center;
+    }
+    .zone-count-input:focus { border-color: #4a7a5c; }
+
+    .submit-btn {
+      width: 100%; padding: 18px; border: none; border-radius: 12px;
+      background: #4a7a5c; color: #fff; font-size: 14px; font-weight: 600;
+      font-family: 'Inter', sans-serif; letter-spacing: .04em;
+      cursor: pointer; transition: all .2s; margin-top: 8px;
+    }
+    .submit-btn:hover:not(:disabled) { background: #5a8f6e; transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: .5; cursor: default; transform: none; }
+
+    .status {
+      margin-top: 12px; padding: 14px 18px;
+      border-radius: 10px; font-size: 13px;
+      display: none;
+    }
+    .status.visible { display: block; }
+    .status.uploading {
+      background: rgba(74,122,92,.12); border: 1px solid rgba(74,122,92,.3);
+      color: #a8d4b6;
+    }
+    .status.success {
+      background: rgba(74,122,92,.15); border: 1px solid rgba(74,122,92,.4);
+      color: #b8e4c6;
+    }
+    .status.error {
+      background: rgba(200,60,60,.12); border: 1px solid rgba(200,60,60,.3);
+      color: #f4a0a0;
+    }
+    .status .step { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+    .instrument-id {
+      margin-top: 10px; padding: 10px 14px;
+      background: rgba(0,0,0,.3); border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      color: #4a7a5c; word-break: break-all; cursor: pointer;
+    }
+    .instrument-id:hover { color: #7aaa8c; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: .3em; text-transform: uppercase;
+      color: rgba(232,237,233,.35); text-decoration: none;
+      margin-bottom: 40px; transition: color .2s;
+    }
+    .back-link:hover { color: rgba(232,237,233,.7); }
+  </style>
+</head>
+<body>
+<div class="page">
+  <a class="back-link" href="./index.html">← Back to Panflow XR</a>
+
+  <div class="header">
+    <div class="logo">Panflow XR</div>
+    <h1>Upload Instrument</h1>
+    <p class="subtitle">Add a 3D instrument model and map audio samples to each zone.</p>
+  </div>
+
+  <form id="upload-form">
+
+    <!-- Instrument info -->
+    <div class="card">
+      <p class="card-title">01 — Instrument Info</p>
+      <div class="field">
+        <label>Instrument name</label>
+        <input type="text" id="inst-name" placeholder="e.g. Steel Tongue Drum" required />
+      </div>
+      <div class="field">
+        <label>3D Model (.glb)</label>
+        <label class="file-row" id="model-row">
+          <input type="file" id="model-file" accept=".glb" required />
+          <span class="file-icon">⬡</span>
+          <span class="file-label-text">Choose .glb file…</span>
+          <span class="file-size" id="model-size"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Audio zones -->
+    <div class="card">
+      <p class="card-title">02 — Audio Zones</p>
+      <div class="zone-count-row">
+        <label>Number of zones</label>
+        <input type="number" class="zone-count-input" id="zone-count" min="1" max="16" value="9" />
+      </div>
+      <div class="zones-grid" id="zones-grid"></div>
+    </div>
+
+    <button type="submit" class="submit-btn" id="submit-btn">Upload Instrument</button>
+    <div class="status" id="status"></div>
+  </form>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://abhvjibuydzdgqewydgc.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiaHZqaWJ1eWR6ZGdxZXd5ZGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjU0MjAsImV4cCI6MjA5ODAwMTQyMH0.mjWFJ6aeWC3NIwhnzqyDDCgy3nnCRLfH9etg0iAb_mc';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const ZONE_NAMES = ['Dong (centre)', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'];
+
+  // Build zone inputs
+  function buildZones(count) {
+    const grid = document.getElementById('zones-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      grid.innerHTML += `
+        <div class="zone-row">
+          <label class="file-row" id="zone-row-${i}">
+            <input type="file" id="audio-${i}" accept=".mp3,.wav,.ogg,.m4a" data-zone="${i}" />
+            <span class="file-icon">♪</span>
+            <span class="zone-num">Zone ${i}</span>
+            <span class="file-label-text">${ZONE_NAMES[i] || i} — choose audio…</span>
+            <span class="file-size" id="audio-size-${i}"></span>
+          </label>
+          <div class="progress-bar" id="prog-${i}"><div class="progress-fill" id="fill-${i}"></div></div>
+        </div>`;
+    }
+    // Attach file change listeners
+    for (let i = 0; i < count; i++) {
+      document.getElementById(`audio-${i}`).addEventListener('change', (e) => {
+        const f = e.target.files[0];
+        const row = document.getElementById(`zone-row-${i}`);
+        const sizeEl = document.getElementById(`audio-size-${i}`);
+        if (f) {
+          row.classList.add('has-file');
+          row.querySelector('.file-label-text').textContent = f.name;
+          sizeEl.textContent = formatSize(f.size);
+        }
+      });
+    }
+  }
+
+  document.getElementById('zone-count').addEventListener('change', (e) => {
+    buildZones(parseInt(e.target.value) || 9);
+  });
+
+  document.getElementById('model-file').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    const row = document.getElementById('model-row');
+    if (f) {
+      row.classList.add('has-file');
+      row.querySelector('.file-label-text').textContent = f.name;
+      document.getElementById('model-size').textContent = formatSize(f.size);
+    }
+  });
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + 'B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
+  }
+
+  function setStatus(type, html) {
+    const el = document.getElementById('status');
+    el.className = `status visible ${type}`;
+    el.innerHTML = html;
+  }
+
+  function setProgress(zone, pct) {
+    const bar = document.getElementById(`prog-${zone}`);
+    const fill = document.getElementById(`fill-${zone}`);
+    if (!bar || !fill) return;
+    bar.classList.add('visible');
+    fill.style.width = pct + '%';
+  }
+
+  document.getElementById('upload-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+
+    const name = document.getElementById('inst-name').value.trim();
+    const modelFile = document.getElementById('model-file').files[0];
+    const zoneCount = parseInt(document.getElementById('zone-count').value) || 9;
+    const id = crypto.randomUUID();
+
+    try {
+      // Upload model
+      setStatus('uploading', '<span class="step">⬆ Uploading 3D model…</span>');
+      const { error: modelErr } = await sb.storage
+        .from('instruments')
+        .upload(`${id}/model.glb`, modelFile, { contentType: 'model/gltf-binary' });
+      if (modelErr) throw modelErr;
+
+      const modelUrl = sb.storage.from('instruments').getPublicUrl(`${id}/model.glb`).data.publicUrl;
+
+      // Upload audio files
+      const audioUrls = new Array(zoneCount).fill(null);
+      for (let i = 0; i < zoneCount; i++) {
+        const audioFile = document.getElementById(`audio-${i}`)?.files[0];
+        if (!audioFile) continue;
+
+        setStatus('uploading', `<span class="step">⬆ Uploading zone ${i} audio… (${i + 1}/${zoneCount})</span>`);
+        setProgress(i, 30);
+
+        const ext = audioFile.name.split('.').pop();
+        const { error: audioErr } = await sb.storage
+          .from('instruments')
+          .upload(`${id}/audio/${i}.${ext}`, audioFile);
+        if (audioErr) throw audioErr;
+
+        audioUrls[i] = sb.storage.from('instruments').getPublicUrl(`${id}/audio/${i}.${ext}`).data.publicUrl;
+        setProgress(i, 100);
+      }
+
+      // Save metadata
+      setStatus('uploading', '<span class="step">💾 Saving instrument…</span>');
+      const { error: dbErr } = await sb.from('instruments').insert({
+        id, name, model_url: modelUrl, audio_urls: audioUrls, zone_count: zoneCount
+      });
+      if (dbErr) throw dbErr;
+
+      setStatus('success', `
+        <strong>✓ Instrument uploaded!</strong><br/>
+        <p style="margin:8px 0 4px;font-size:12px;color:rgba(232,237,233,.5)">Instrument ID (click to copy):</p>
+        <div class="instrument-id" onclick="navigator.clipboard.writeText('${id}').then(() => this.textContent = 'Copied!')">${id}</div>
+        <p style="margin:12px 0 0;font-size:12px;color:rgba(232,237,233,.4)">
+          Open Panflow XR in VR mode — your instrument will load automatically.
+        </p>
+      `);
+    } catch (err) {
+      setStatus('error', `<strong>Upload failed</strong><br/><span style="font-size:12px">${err.message || err}</span>`);
+      btn.disabled = false;
+    }
+  });
+
+  // Init
+  buildZones(9);
+</script>
+</body>
+</html>
