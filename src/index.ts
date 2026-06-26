@@ -110,6 +110,7 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
 
   // Set panflowEnterXR immediately — custom instrument loads in background
   (window as any).panflowEnterXR = () => world.launchXR();
+  (window as any).panflowXRMode   = xrMode; // lets landing.ts know which mode was loaded
   (window as any).panflowRecording = recordingManager;
 
   // ── Handpan (default) ────────────────────────────────────────────────────
