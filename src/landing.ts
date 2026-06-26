@@ -226,15 +226,39 @@ const loadingEl   = document.getElementById('landing-loading') as HTMLDivElement
 const landingEl   = document.getElementById('landing-ui')  as HTMLDivElement;
 const landingScene = document.getElementById('landing-scene') as HTMLDivElement;
 
+const triggerXR = () => {
+  loadingEl.classList.remove('hidden');
+  const tryEnter = () => {
+    if (typeof (window as any).panflowEnterXR === 'function') {
+      (window as any).panflowEnterXR();
+    } else {
+      setTimeout(tryEnter, 100);
+    }
+  };
+  tryEnter();
+};
+
 const handleEnter = (mode: 'ar' | 'vr') => {
-  // Redirect to same page with mode query param so index.ts reads it
-  const url = new URL(window.location.href);
-  url.searchParams.set('mode', mode);
-  window.location.href = url.toString();
+  const currentMode = new URLSearchParams(window.location.search).get('mode');
+  if (currentMode === mode) {
+    // Mode already set in URL, just enter XR directly
+    triggerXR();
+  } else {
+    // Redirect with mode param so index.ts configures World correctly
+    const url = new URL(window.location.href);
+    url.searchParams.set('mode', mode);
+    window.location.href = url.toString();
+  }
 };
 
 enterArBtn.addEventListener('click', () => handleEnter('ar'));
 enterVrBtn.addEventListener('click', () => handleEnter('vr'));
+
+// If arriving via redirect (mode in URL), auto-enter XR
+const urlMode = new URLSearchParams(window.location.search).get('mode');
+if (urlMode === 'ar' || urlMode === 'vr') {
+  triggerXR();
+}
 
 // Fade out landing when XR session starts
 window.addEventListener('panflow-xr-started', () => {
