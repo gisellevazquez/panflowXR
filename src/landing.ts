@@ -227,20 +227,13 @@ const landingEl   = document.getElementById('landing-ui')  as HTMLDivElement;
 const landingScene = document.getElementById('landing-scene') as HTMLDivElement;
 
 const handleEnter = (mode: 'ar' | 'vr') => {
+  // Save mode and reload page so index.ts reads the fresh localStorage value
   localStorage.setItem('xr-mode', mode);
-  const btn = mode === 'ar' ? enterArBtn : enterVrBtn;
-  btn.disabled = true;
-  btn.innerHTML = '<span>Entering experience…</span><span class="arrow">◔</span>';
-  loadingEl.classList.remove('hidden');
 
-  const tryEnter = () => {
-    if (typeof (window as any).panflowEnterXR === 'function') {
-      (window as any).panflowEnterXR();
-    } else {
-      setTimeout(tryEnter, 100);
-    }
-  };
-  tryEnter();
+  // Brief delay to ensure localStorage is synced before reload
+  setTimeout(() => {
+    window.location.reload();
+  }, 50);
 };
 
 enterArBtn.addEventListener('click', () => handleEnter('ar'));
