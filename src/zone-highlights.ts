@@ -42,6 +42,10 @@ export class ZoneHighlightSystem extends createSystem({
   private pulsingZone = -1;
   private pulseTime = 0;
 
+  // Pending state — applied once indicator meshes are built
+  private pendingHighlight: { index: number; style: HighlightStyle } | null = null;
+  private pendingShowAll: boolean | null = null;
+
   init() {
     zoneHighlightManager.highlightZone = (index, style) => this._highlight(index, style);
     zoneHighlightManager.highlightAll = (visible) => this._showAll(visible);
@@ -50,6 +54,11 @@ export class ZoneHighlightSystem extends createSystem({
     this.queries.handpans.subscribe("qualify", (entity: Entity) => {
       if (!this.pendingEntity) this.pendingEntity = entity;
     });
+
+    // Handpan entity is created before systems register — pick it up immediately
+    for (const entity of this.queries.handpans.entities) {
+      if (!this.pendingEntity) this.pendingEntity = entity;
+    }
   }
 
   update(delta: number, _time: number) {
@@ -58,6 +67,15 @@ export class ZoneHighlightSystem extends createSystem({
       if (!this.pendingEntity) return;
       this._buildIndicators(this.pendingEntity);
       this.setupDone = true;
+      if (this.pendingShowAll !== null) {
+        this._showAll(this.pendingShowAll);
+        this.pendingShowAll = null;
+      }
+      if (this.pendingHighlight) {
+        const { index, style } = this.pendingHighlight;
+        this.pendingHighlight = null;
+        this._highlight(index, style);
+      }
     }
 
     // Pulse animation — oscillates opacity of the pulsing zone
@@ -87,6 +105,7 @@ export class ZoneHighlightSystem extends createSystem({
       ring.position.set(ox, oy + 0.04, oz);
       ring.rotation.x = -Math.PI / 2;
       ring.visible    = false;
+      ring.renderOrder = 10;
       mesh.add(ring);
       this.indicators.push(ring);
       this.mats.push(mat);
@@ -94,8 +113,14 @@ export class ZoneHighlightSystem extends createSystem({
   }
 
   private _highlight(index: number, style: HighlightStyle): void {
+    if (!this.setupDone) {
+      this.pendingHighlight = { index, style };
+      return;
+    }
+
     const color = STYLE_COLORS[style];
     for (let i = 0; i < this.mats.length; i++) {
+      this.indicators[i].visible = true;
       this.mats[i].color.setHex(i === index ? color : C_IDLE);
       this.mats[i].opacity = i === index ? 0.85 : 0.10;
     }
@@ -104,6 +129,11 @@ export class ZoneHighlightSystem extends createSystem({
   }
 
   private _showAll(visible: boolean): void {
+    if (!this.setupDone) {
+      this.pendingShowAll = visible;
+      return;
+    }
+
     this.indicators.forEach((ind, i) => {
       ind.visible = visible;
       if (visible) {
@@ -119,6 +149,8 @@ export class ZoneHighlightSystem extends createSystem({
   }
 
   private _setPulse(index: number, enabled: boolean): void {
+    if (!this.setupDone || index < 0 || index >= this.mats.length) return;
+    this.indicators[index].visible = true;
     this.pulsingZone = enabled ? index : -1;
     this.pulseTime = 0;
   }
