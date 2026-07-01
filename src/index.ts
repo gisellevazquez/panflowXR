@@ -18,6 +18,7 @@ import { reverbManager }          from "./reverb.js";
 import { ambientManager }         from "./ambient.js";
 import { MenuSystem }             from "./ui.js";
 import { ProductInfoSystem }      from "./product-info.js";
+import { ZoneHighlightSystem }   from "./zone-highlights.js";
 import { MelodySystem }           from "./melody.js";
 import { RecordingSystem, recordingManager } from "./recording-system.js";
 import { LauncherSystem }         from "./launcher.js";
@@ -152,6 +153,7 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   world.registerSystem(BubbleSystem);
   world.registerSystem(MenuSystem);
   world.registerSystem(ProductInfoSystem);
+  world.registerSystem(ZoneHighlightSystem);
   world.registerSystem(MelodySystem);
   world.registerSystem(RecordingSystem);
   world.registerSystem(LauncherSystem);
