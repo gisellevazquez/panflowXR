@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
         device: "metaQuest3",
         environment: "living_room",
       },
-      ai: { tools: ["claude"] },
+      ai: { tools: ["cursor"] },
       verbose: true,
     })] : []),
 
