@@ -16,7 +16,7 @@ import {
 
 import { reverbManager }  from "./reverb.js";
 import { ambientManager, AmbientType } from "./ambient.js";
-import { bubbleManager }      from "./bubbles.js";
+// import { bubbleManager }      from "./bubbles.js"; // DISABLED
 import { productInfoManager } from "./product-info.js";
 import { melodyManager, MelodyMode } from "./melody.js";
 import { Handpan } from "./handpan.js";
@@ -289,22 +289,24 @@ export class MenuSystem extends createSystem({
     }
 
     // ─ Bubble toggle ──────────────────────────────────────────────────────
-    const bubblePill  = doc.getElementById("bubble-toggle") as any;
-    const bubbleKnob  = doc.getElementById("bubble-knob")   as any;
-    const bubbleSpace = doc.getElementById("bubble-space")  as any;
-
-    const setBubbleToggle = (on: boolean) => {
-      bubblePill?.setProperties ({ backgroundColor: on ? 0x3d1428 : 0x27272a, borderColor: on ? 0xe89ab4 : 0x27272a });
-      bubbleKnob?.setProperties ({ backgroundColor: on ? 0xf5f5f5 : 0x52525b });
-      bubbleSpace?.setProperties({ flexGrow: on ? 1 : 0 });
-    };
-
-    setBubbleToggle(bubbleManager.enabled);
-
-    doc.getElementById("bubble-toggle")?.addEventListener("click", () => {
-      bubbleManager.enabled = !bubbleManager.enabled;
-      setBubbleToggle(bubbleManager.enabled);
-    });
+    // DISABLED — preserve code for future use
+    //
+    // const bubblePill  = doc.getElementById("bubble-toggle") as any;
+    // const bubbleKnob  = doc.getElementById("bubble-knob")   as any;
+    // const bubbleSpace = doc.getElementById("bubble-space")  as any;
+    //
+    // const setBubbleToggle = (on: boolean) => {
+    //   bubblePill?.setProperties ({ backgroundColor: on ? 0x3d1428 : 0x27272a, borderColor: on ? 0xe89ab4 : 0x27272a });
+    //   bubbleKnob?.setProperties ({ backgroundColor: on ? 0xf5f5f5 : 0x52525b });
+    //   bubbleSpace?.setProperties({ flexGrow: on ? 1 : 0 });
+    // };
+    //
+    // setBubbleToggle(bubbleManager.enabled);
+    //
+    // doc.getElementById("bubble-toggle")?.addEventListener("click", () => {
+    //   bubbleManager.enabled = !bubbleManager.enabled;
+    //   setBubbleToggle(bubbleManager.enabled);
+    // });
 
     // ─ Product info toggle ────────────────────────────────────────────────
     const productPill  = doc.getElementById("product-info-toggle") as any;

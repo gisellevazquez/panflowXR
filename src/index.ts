@@ -11,13 +11,15 @@ import {
   Object3D,
 } from "@iwsdk/core";
 
-import { Handpan, HandpanSystem, handpanLockManager } from "./handpan.js";
-import { BubbleSystem }           from "./bubbles.js";
+import { Handpan, HandpanSystem, handpanLockManager, setCustomAudioUrls } from "./handpan.js";
+import { fetchLatestInstrument } from "./instrument-loader.js";
+// import { BubbleSystem }           from "./bubbles.js"; // DISABLED
 import { reverbManager }          from "./reverb.js";
 import { ambientManager }         from "./ambient.js";
 import { MenuSystem }             from "./ui.js";
 import { ProductInfoSystem }      from "./product-info.js";
 import { MelodySystem }           from "./melody.js";
+import { ZoneHighlightSystem }   from "./zone-highlights.js";
 import { RecordingSystem, recordingManager } from "./recording-system.js";
 import { LauncherSystem }         from "./launcher.js";
 import { VREnvironmentSystem }    from "./vr-environment.js";
@@ -136,9 +138,10 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
 
   // ── Systems ───────────────────────────────────────────────────────────────
   world.registerSystem(HandpanSystem);
-  world.registerSystem(BubbleSystem);
+  // world.registerSystem(BubbleSystem); // DISABLED
   world.registerSystem(MenuSystem);
   world.registerSystem(ProductInfoSystem);
+  world.registerSystem(ZoneHighlightSystem);
   world.registerSystem(MelodySystem);
   world.registerSystem(RecordingSystem);
   world.registerSystem(LauncherSystem);

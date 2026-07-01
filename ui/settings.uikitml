@@ -522,8 +522,8 @@
 
   <div class="divider"></div>
 
-  <!-- ── Bubbles ───────────────────────────────────────────── -->
-  <div class="toggle-row">
+  <!-- ── Bubbles (DISABLED) ────────────────────────────────── -->
+  <div class="toggle-row" style="display: none;">
     <div class="toggle-text">
       <span class="toggle-title">Bubbles</span>
       <span class="toggle-sub">Floating particle effect</span>

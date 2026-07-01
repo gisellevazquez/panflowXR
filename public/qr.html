@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panflow XR — QR Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1/build/qrcode.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; min-height: 100%;
+      background: #0a0f0c; color: #e8ede9;
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page { max-width: 640px; margin: 0 auto; padding: 60px 24px 80px; }
+    .header { margin-bottom: 36px; }
+    .logo {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      letter-spacing: .4em; text-transform: uppercase;
+      color: rgba(232,237,233,.4); margin-bottom: 32px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: #4a7a5c; box-shadow: 0 0 8px #4a7a5c;
+    }
+    h1 {
+      font-size: 32px; font-weight: 700; letter-spacing: -.03em;
+      color: #f0f4f1; margin: 0 0 8px;
+    }
+    .subtitle {
+      font-size: 14px; color: rgba(232,237,233,.5); margin: 0;
+    }
+
+    .card {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px; padding: 32px; margin-bottom: 16px;
+    }
+    .card-title {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: .35em; text-transform: uppercase;
+      color: #4a7a5c; margin: 0 0 20px;
+    }
+
+    .field { margin-bottom: 20px; }
+    label {
+      display: block; font-size: 12px; font-weight: 500;
+      color: rgba(232,237,233,.6); margin-bottom: 8px;
+    }
+    input[type="text"], input[type="url"] {
+      width: 100%; padding: 12px 16px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px; color: #f0f4f1; font-size: 14px;
+      font-family: 'JetBrains Mono', monospace; outline: none;
+      transition: border-color .2s;
+    }
+    input:focus { border-color: #4a7a5c; }
+    input::placeholder { color: rgba(232,237,233,.25); }
+
+    .base-url {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .base-url-radio {
+      display: flex; gap: 24px; margin-bottom: 8px;
+    }
+    .radio-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: rgba(232,237,233,.7); cursor: pointer;
+    }
+    .radio-label input { accent-color: #4a7a5c; }
+
+    .preview {
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px; padding: 24px;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      margin-top: 16px;
+    }
+    .preview.hidden { display: none; }
+    #qr-canvas { border-radius: 8px; }
+    .qr-url {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      color: rgba(232,237,233,.4); word-break: break-all; text-align: center;
+      max-width: 100%;
+    }
+    .copy-btn {
+      appearance: none; border: 1px solid rgba(74,122,92,.5);
+      background: rgba(74,122,92,.1); color: #a8d4b6;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      letter-spacing: .2em; padding: 8px 20px; border-radius: 8px;
+      cursor: pointer; transition: all .2s;
+    }
+    .copy-btn:hover { background: rgba(74,122,92,.2); }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: .3em; text-transform: uppercase;
+      color: rgba(232,237,233,.35); text-decoration: none;
+      margin-bottom: 40px; transition: color .2s;
+    }
+    .back-link:hover { color: rgba(232,237,233,.7); }
+
+    .mode-chips {
+      display: flex; gap: 8px; margin-top: 8px;
+    }
+    .mode-chip {
+      padding: 6px 14px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.04); color: rgba(232,237,233,.5);
+      font-size: 12px; font-family: 'JetBrains Mono', monospace;
+      cursor: pointer; transition: all .2s;
+    }
+    .mode-chip.active {
+      background: rgba(74,122,92,.15); border-color: #4a7a5c;
+      color: #a8d4b6;
+    }
+    .mode-chip:hover { border-color: rgba(255,255,255,.25); color: #e8ede9; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <a class="back-link" href="./index.html">← Back to Panflow XR</a>
+
+  <div class="header">
+    <div class="logo">Panflow XR</div>
+    <h1>QR Generator</h1>
+    <p class="subtitle">Generate a QR code that links directly to a specific instrument demo.</p>
+  </div>
+
+  <div class="card">
+    <p class="card-title">Instrument Details</p>
+
+    <div class="field">
+      <label>Base URL</label>
+      <div class="base-url-radio">
+        <label class="radio-label">
+          <input type="radio" name="base-url" value="production" checked onchange="updateQR()" />
+          Production (GitHub Pages)
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="base-url" value="local" onchange="updateQR()" />
+          Local dev
+        </label>
+      </div>
+      <input type="url" id="base-url-input"
+             value="https://gisellevazquez.github.io/panflowXR/"
+             placeholder="https://gisellevazquez.github.io/panflowXR/"
+             oninput="updateQR()" />
+    </div>
+
+    <div class="field">
+      <label>Instrument UUID</label>
+      <input type="text" id="instrument-id"
+             placeholder="Paste instrument UUID…"
+             oninput="updateQR()" />
+    </div>
+
+    <div class="field">
+      <label>XR Mode (optional)</label>
+      <div class="mode-chips" id="mode-chips">
+        <span class="mode-chip active" data-mode=""     onclick="setMode('')">Auto (AR)</span>
+        <span class="mode-chip"         data-mode="&mode=ar" onclick="setMode('&mode=ar')">AR</span>
+        <span class="mode-chip"         data-mode="&mode=vr" onclick="setMode('&mode=vr')">VR</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="preview hidden" id="qr-preview">
+    <canvas id="qr-canvas"></canvas>
+    <span class="qr-url" id="qr-url-text"></span>
+    <button class="copy-btn" onclick="copyURL()">Copy URL</button>
+  </div>
+</div>
+
+<script>
+  let currentMode = '';
+
+  const productionBase    = 'https://gisellevazquez.github.io/panflowXR/';
+  const localBase         = 'https://localhost:8081/';
+  const baseUrlInput      = document.getElementById('base-url-input');
+  const instrumentInput   = document.getElementById('instrument-id');
+  const preview           = document.getElementById('qr-preview');
+  const canvas            = document.getElementById('qr-canvas');
+  const urlText           = document.getElementById('qr-url-text');
+
+  document.querySelectorAll('input[name="base-url"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      baseUrlInput.value = radio.value === 'production' ? productionBase : localBase;
+      updateQR();
+    });
+  });
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('#mode-chips .mode-chip').forEach(chip => {
+      chip.classList.toggle('active', chip.dataset.mode === mode);
+    });
+    updateQR();
+  }
+
+  function buildURL() {
+    const base  = baseUrlInput.value.trim().replace(/\/?$/, '/');
+    const id    = instrumentInput.value.trim();
+    if (!id) return null;
+    return `${base}?instrument=${id}${currentMode}`;
+  }
+
+  function updateQR() {
+    const url = buildURL();
+    if (!url) { preview.classList.add('hidden'); return; }
+
+    preview.classList.remove('hidden');
+    urlText.textContent = url;
+    QRCode.toCanvas(canvas, url, { width: 256, margin: 2, color: { dark: '#e8ede9', light: '#0a0f0c' } });
+  }
+
+  function copyURL() {
+    const url = buildURL();
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy URL'; }, 1500);
+    });
+  }
+</script>
+</body>
+</html>
