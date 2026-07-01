@@ -12,6 +12,7 @@ import {
 } from "@iwsdk/core";
 
 import { Handpan } from "./handpan.js";
+import { instrumentStore } from "./instrument-store.js";
 
 export const productInfoManager = { enabled: true };
 
@@ -168,5 +169,31 @@ export class ProductInfoSystem extends createSystem({
         }
       });
     }, 200);
+
+    // Bind instrument metadata from the reactive store
+    this._bindInstrumentMetadata(doc);
+  }
+
+  private _bindInstrumentMetadata(doc: UIKitDocument): void {
+    const apply = (inst: typeof instrumentStore.instrument) => {
+      if (inst) {
+        const nameEl     = doc.getElementById("product-name")     as any;
+        const scaleEl    = doc.getElementById("product-scale")    as any;
+        const notesEl    = doc.getElementById("product-notes")    as any;
+        const materialEl = doc.getElementById("product-material") as any;
+
+        nameEl?.setProperties({ text: inst.name });
+
+        if (inst.scale_name) scaleEl?.setProperties({ text: inst.scale_name });
+        if (inst.zone_count) notesEl?.setProperties({ text: `${inst.zone_count}-note` });
+        if (inst.material)   materialEl?.setProperties({ text: inst.material });
+      }
+    };
+
+    // Apply immediately if already loaded
+    apply(instrumentStore.instrument);
+
+    // Subscribe for future updates (e.g. late-arriving fetch)
+    this.cleanupFuncs.push(instrumentStore.subscribe(apply));
   }
 }

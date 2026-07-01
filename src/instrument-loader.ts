@@ -10,6 +10,8 @@ export interface CustomInstrument {
   model_url: string;
   audio_urls: (string | null)[];
   zone_count: number;
+  material?: string;
+  scale_name?: string;
 }
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -19,9 +21,25 @@ export async function fetchLatestInstrument(): Promise<CustomInstrument | null> 
   try {
     const { data, error } = await sb
       .from("instruments")
-      .select("id, name, model_url, audio_urls, zone_count")
+      .select("id, name, model_url, audio_urls, zone_count, material, scale_name")
       .order("created_at", { ascending: false })
       .limit(1)
+      .single();
+
+    if (error || !data?.model_url) return null;
+    return data as CustomInstrument;
+  } catch {
+    return null;
+  }
+}
+
+/** Returns a specific instrument by UUID, or null if not found. */
+export async function fetchInstrumentById(id: string): Promise<CustomInstrument | null> {
+  try {
+    const { data, error } = await sb
+      .from("instruments")
+      .select("id, name, model_url, audio_urls, zone_count, material, scale_name")
+      .eq("id", id)
       .single();
 
     if (error || !data?.model_url) return null;
