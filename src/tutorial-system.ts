@@ -96,11 +96,10 @@ export class TutorialSystem extends createSystem({
       }),
     );
 
-    this.queries.handpans.subscribe("qualify", () => {
-      if (!this.documentWiredUp && this.panelEntity) {
-        this._pollForDocument(this.panelEntity);
-      }
-    });
+    // Poll for panel document immediately — do not wait for handpan qualify
+    if (this.panelEntity) {
+      setTimeout(() => this._pollForDocument(this.panelEntity!), 300);
+    }
 
     const onNote = (e: Event) => {
       if (!tutorialManager.active || this.stepIndex !== 1) return;
@@ -181,12 +180,22 @@ export class TutorialSystem extends createSystem({
   }
 
   private _wirePanel(doc: UIKitDocument): void {
+    if (this.documentWiredUp) return;
     this.documentWiredUp = true;
     this.panelDoc = doc;
     (doc.rootElement as any).setProperties({ display: "none" });
 
+    setTimeout(() => {
+      this.panelEntity?.object3D?.traverse((obj: any) => {
+        if (obj.isMesh && obj.material) {
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+          mats.forEach((m: any) => { m.side = 2; });
+        }
+      });
+    }, 200);
+
     doc.getElementById("tutorial-skip")?.addEventListener("click", () => {
-      tutorialManager.skip();
+      this._finish(true);
     });
   }
 
@@ -284,12 +293,13 @@ export class TutorialSystem extends createSystem({
   }
 
   private _showPanel(visible: boolean): void {
+    if (this.panelEntity?.object3D) {
+      this.panelEntity.object3D.visible = visible;
+    }
     if (this.panelDoc) {
       (this.panelDoc.rootElement as any).setProperties({
         display: visible ? "flex" : "none",
       });
-    } else if (this.panelEntity?.object3D) {
-      this.panelEntity.object3D.visible = visible;
     }
   }
 }
