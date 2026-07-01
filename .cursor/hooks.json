@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "stop": [
+      {
+        "type": "prompt",
+        "prompt": "IMPORTANT vault update check. This session has completed. Before you finish, verify:\n\n1. Did you update the daily note at C:\\Users\\jeswi\\01_Jeswin_Data\\08_ObsidianVault\\JeswinAIVault\\panflow\\daily\\YYYY-MM-DD.md with relevant Done / Decisions / Next bullets?\n2. If stack, focus, paths, commands, or blockers changed, did you update Context.md (set Last updated)?\n3. Did you update any feature notes under panflow/features/ that were modified?\n\nIf ANY meaningful code changes were made and the vault was NOT updated, do it NOW. Then reply 'Vault is up to date.'\n\nHook input for context: $ARGUMENTS",
+        "timeout": 30
+      }
+    ]
+  }
+}

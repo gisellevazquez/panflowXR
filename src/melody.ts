@@ -1,13 +1,7 @@
-import {
-  createSystem,
-  Entity,
-  Mesh,
-  CircleGeometry,
-  MeshBasicMaterial,
-  DoubleSide,
-} from "@iwsdk/core";
+import { createSystem } from "@iwsdk/core";
 
-import { Handpan, ZONE_OFFSETS, handpanAudio } from "./handpan.js";
+import { handpanAudio } from "./handpan.js";
+import { zoneHighlightManager } from "./zone-highlights.js";
 
 export type MelodyMode = "free" | "guided";
 
@@ -32,29 +26,16 @@ const MELODY: MelodyNote[] = [
 
 const TOTAL_DURATION = 9.5; // seconds until auto-stop after last note
 
-const C_IDLE    = 0x6b52a8; // dim lavender
-const C_ACTIVE  = 0xffffff; // bright white
-const C_CORRECT = 0x4ade80; // green
-const C_WRONG   = 0xff6b6b; // red
-
 export const melodyManager = {
   playing: false,
   mode: "free" as MelodyMode,
 };
 
-export class MelodySystem extends createSystem({
-  handpans: { required: [Handpan] },
-}) {
-  private indicators:      Mesh[]              = [];
-  private mats:            MeshBasicMaterial[] = [];
-  private setupDone                            = false;
-  private pendingEntity:   Entity | null       = null; // set in qualify, built in update
-
+export class MelodySystem extends createSystem({}) {
   // Shared playback state
   private active        = false;
   private elapsed       = 0;
   private noteIndex     = 0;
-  private pulseTime     = 0;
 
   // Guided-mode state
   private guidedStep    = 0;
@@ -68,13 +49,6 @@ export class MelodySystem extends createSystem({
   };
 
   init() {
-    // Just record the entity — building Three.js objects inside a subscribe
-    // callback (which fires mid-ECS-update) can corrupt ECS state. We do
-    // the actual construction in the first safe update() frame instead.
-    this.queries.handpans.subscribe("qualify", (entity: Entity) => {
-      if (!this.pendingEntity) this.pendingEntity = entity;
-    });
-
     document.addEventListener("handpan-note", this.onNote);
     this.cleanupFuncs.push(() => {
       document.removeEventListener("handpan-note", this.onNote);
@@ -82,13 +56,6 @@ export class MelodySystem extends createSystem({
   }
 
   update(delta: number, _time: number) {
-    // Build indicators on the first safe frame after the handpan qualifies
-    if (!this.setupDone) {
-      if (!this.pendingEntity) return;
-      this._buildIndicators(this.pendingEntity);
-      this.setupDone = true;
-    }
-
     if (melodyManager.playing && !this.active) {
       this._start();
     } else if (!melodyManager.playing && this.active) {
@@ -98,72 +65,37 @@ export class MelodySystem extends createSystem({
 
     if (!this.active) return;
 
-    this.elapsed   += delta;
-    this.pulseTime += delta;
+    this.elapsed += delta;
 
     if (melodyManager.mode === "free") {
       this._tickFree();
     } else {
       this._tickGuided(delta);
     }
-
-    this._pulse();
   }
 
   // ── Private ───────────────────────────────────────────────────────────────
-
-  private _buildIndicators(entity: Entity): void {
-    const mesh = entity.object3D!;
-
-    for (let i = 0; i < ZONE_OFFSETS.length; i++) {
-      // Separate geometry per mesh — never share geometry across instances
-      const geo = new CircleGeometry(0.30, 32);
-      const mat = new MeshBasicMaterial({
-        color:       C_IDLE,
-        transparent: true,
-        opacity:     0,
-        depthWrite:  false,
-        side:        DoubleSide,
-      });
-      const ring = new Mesh(geo, mat);
-      const [ox, oy, oz] = ZONE_OFFSETS[i];
-      ring.position.set(ox, oy + 0.04, oz);
-      ring.rotation.x = -Math.PI / 2;
-      ring.visible    = false;
-      mesh.add(ring);
-      this.indicators.push(ring);
-      this.mats.push(mat);
-    }
-  }
 
   private _start(): void {
     this.active        = true;
     this.elapsed       = 0;
     this.noteIndex     = 0;
-    this.pulseTime     = 0;
     this.guidedStep    = 0;
     this.waitingTouch  = false;
     this.feedbackTimer = 0;
     this.advanceTimer  = 0;
 
-    this.indicators.forEach((ind, i) => {
-      ind.visible          = true;
-      this.mats[i].color.setHex(C_IDLE);
-      this.mats[i].opacity = 0.12;
-    });
+    zoneHighlightManager.highlightAll(true);
 
     if (melodyManager.mode === "guided") {
-      this._highlight(MELODY[0].zone, C_ACTIVE);
+      zoneHighlightManager.highlightZone(MELODY[0].zone, "guide");
       this.waitingTouch = true;
     }
   }
 
   private _stop(): void {
     this.active = false;
-    this.indicators.forEach((ind, i) => {
-      ind.visible          = false;
-      this.mats[i].opacity = 0;
-    });
+    zoneHighlightManager.highlightAll(false);
   }
 
   private _tickFree(): void {
@@ -173,7 +105,7 @@ export class MelodySystem extends createSystem({
     ) {
       const { zone } = MELODY[this.noteIndex];
       handpanAudio.play(zone, 0.75);
-      this._highlight(zone, C_ACTIVE);
+      zoneHighlightManager.highlightZone(zone, "guide");
       this.noteIndex++;
     }
 
@@ -187,7 +119,7 @@ export class MelodySystem extends createSystem({
     if (this.feedbackTimer > 0) {
       this.feedbackTimer -= delta;
       if (this.feedbackTimer <= 0 && this.guidedStep < MELODY.length) {
-        this._highlight(MELODY[this.guidedStep].zone, C_ACTIVE);
+        zoneHighlightManager.highlightZone(MELODY[this.guidedStep].zone, "guide");
         this.waitingTouch = true;
       }
     }
@@ -195,7 +127,7 @@ export class MelodySystem extends createSystem({
     if (this.advanceTimer > 0) {
       this.advanceTimer -= delta;
       if (this.advanceTimer <= 0 && this.guidedStep < MELODY.length) {
-        this._highlight(MELODY[this.guidedStep].zone, C_ACTIVE);
+        zoneHighlightManager.highlightZone(MELODY[this.guidedStep].zone, "guide");
         this.waitingTouch = true;
       }
     }
@@ -209,7 +141,7 @@ export class MelodySystem extends createSystem({
 
     if (zone === expected) {
       handpanAudio.play(zone, 0.85);
-      this._highlight(zone, C_CORRECT);
+      zoneHighlightManager.highlightZone(zone, "success");
       this.guidedStep++;
 
       if (this.guidedStep >= MELODY.length) {
@@ -220,32 +152,8 @@ export class MelodySystem extends createSystem({
         this.advanceTimer = 0.5;
       }
     } else {
-      this._dimAll();
-      this.mats[zone].color.setHex(C_WRONG);
-      this.mats[zone].opacity = 0.75;
+      zoneHighlightManager.highlightZone(zone, "wrong");
       this.feedbackTimer = 0.9;
     }
-  }
-
-  private _highlight(zone: number, color: number): void {
-    for (let i = 0; i < this.mats.length; i++) {
-      this.mats[i].color.setHex(i === zone ? color : C_IDLE);
-      this.mats[i].opacity = i === zone ? 0.85 : 0.10;
-    }
-  }
-
-  private _dimAll(): void {
-    this.mats.forEach(m => { m.color.setHex(C_IDLE); m.opacity = 0.10; });
-  }
-
-  private _pulse(): void {
-    const activeZone = melodyManager.mode === "free"
-      ? (this.noteIndex > 0 ? MELODY[this.noteIndex - 1].zone : -1)
-      : (this.guidedStep < MELODY.length ? MELODY[this.guidedStep].zone : -1);
-
-    if (activeZone < 0 || (melodyManager.mode === "guided" && !this.waitingTouch)) return;
-
-    const pulse = 0.75 + 0.25 * Math.sin(this.pulseTime * 4);
-    this.mats[activeZone].opacity = pulse;
   }
 }
