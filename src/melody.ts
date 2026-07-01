@@ -2,6 +2,7 @@ import { createSystem } from "@iwsdk/core";
 
 import { handpanAudio } from "./handpan.js";
 import { zoneHighlightManager } from "./zone-highlights.js";
+import { tutorialManager } from "./tutorial-system.js";
 
 export type MelodyMode = "free" | "guided";
 
@@ -56,6 +57,11 @@ export class MelodySystem extends createSystem({}) {
   }
 
   update(delta: number, _time: number) {
+    if (tutorialManager.active) {
+      if (this.active) melodyManager.playing = false;
+      return;
+    }
+
     if (melodyManager.playing && !this.active) {
       this._start();
     } else if (!melodyManager.playing && this.active) {

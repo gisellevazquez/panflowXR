@@ -101,5 +101,10 @@
     <span class="dock-lbl">Settings</span>
   </button>
 
+  <!-- ── Learn a song ─────────────────────────────────────── -->
+  <button class="dock-btn" id="launcher-song">
+    <img class="dock-icon-img" src="./icons/play-regular.svg" />
+    <span class="dock-lbl">Song</span>
+  </button>
 
 </div>

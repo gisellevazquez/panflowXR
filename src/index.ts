@@ -16,12 +16,8 @@ import { fetchLatestInstrument } from "./instrument-loader.js";
 // import { BubbleSystem }           from "./bubbles.js"; // DISABLED
 import { reverbManager }          from "./reverb.js";
 import { ambientManager }         from "./ambient.js";
-import { MenuSystem }             from "./ui.js";
-import { ProductInfoSystem }      from "./product-info.js";
-import { MelodySystem }           from "./melody.js";
-import { ZoneHighlightSystem }   from "./zone-highlights.js";
-import { RecordingSystem, recordingManager } from "./recording-system.js";
-import { LauncherSystem }         from "./launcher.js";
+import { registerUxSystems }      from "./setup/ux-systems.js";
+import { recordingManager }       from "./recording-system.js";
 import { VREnvironmentSystem }    from "./vr-environment.js";
 
 const assets: AssetManifest = {
@@ -62,6 +58,9 @@ const urlParams = new URLSearchParams(window.location.search);
 const xrMode = (urlParams.get("mode") as "ar" | "vr" | null) ?? (localStorage.getItem("xr-mode") as "ar" | "vr" | null) ?? "ar";
 const isVrMode = xrMode === "vr";
 localStorage.setItem("xr-mode", xrMode);
+
+// Fetch custom instrument in background — does not block world creation
+const instrumentPromise = fetchLatestInstrument();
 
 World.create(document.getElementById("scene-container") as HTMLDivElement, {
   assets,
@@ -107,6 +106,7 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   });
 
   (window as any).panflowEnterXR  = () => world.launchXR();
+  (window as any).panflowXRMode   = xrMode; // lets landing.ts know which mode was loaded
   (window as any).panflowRecording = recordingManager;
 
   // ── Handpan ──────────────────────────────────────────────────────────────
@@ -136,15 +136,17 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
     console.log(`Handpan zone ${index} triggered`);
   });
 
+  // Apply custom audio URLs once instrument fetch resolves
+  instrumentPromise.then((instrument) => {
+    if (instrument?.audio_urls) {
+      setCustomAudioUrls(instrument.audio_urls);
+    }
+  });
+
   // ── Systems ───────────────────────────────────────────────────────────────
   world.registerSystem(HandpanSystem);
   // world.registerSystem(BubbleSystem); // DISABLED
-  world.registerSystem(MenuSystem);
-  world.registerSystem(ProductInfoSystem);
-  world.registerSystem(ZoneHighlightSystem);
-  world.registerSystem(MelodySystem);
-  world.registerSystem(RecordingSystem);
-  world.registerSystem(LauncherSystem);
+  registerUxSystems(world);
 
   if (isVrMode) {
     world.registerSystem(VREnvironmentSystem);

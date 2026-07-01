@@ -9,25 +9,27 @@ import {
 
 import { Handpan, ZONE_OFFSETS } from "./handpan.js";
 
-export type HighlightStyle = "tutorial" | "guide" | "success" | "wrong";
+export type HighlightStyle = "tutorial" | "guide" | "success" | "wrong" | "idle";
 
 const C_IDLE     = 0x6b52a8; // dim lavender
 const C_TUTORIAL = 0x8b7ec8; // soft lavender
-const C_GUIDE    = 0xffffff; // bright white
+const C_GUIDE    = 0xffd700; // gold — next note in song
 const C_SUCCESS  = 0x4ade80; // green
 const C_WRONG    = 0xff6b6b; // red
 
-const STYLE_COLORS: Record<HighlightStyle, number> = {
+const STYLE_COLORS: Record<Exclude<HighlightStyle, "idle">, number> = {
   tutorial: C_TUTORIAL,
   guide:    C_GUIDE,
   success:  C_SUCCESS,
   wrong:    C_WRONG,
 };
 
+const PULSE_STYLES: Set<HighlightStyle> = new Set(["guide", "tutorial"]);
+
 export const zoneHighlightManager = {
   highlightZone(_index: number, _style: HighlightStyle): void {},
   highlightAll(_visible: boolean): void {},
-  pulseZone(_index: number, _enabled: boolean): void {},
+  pulseZone(_index: number, _durationMs = 0): void {},
 };
 
 export class ZoneHighlightSystem extends createSystem({
@@ -37,10 +39,12 @@ export class ZoneHighlightSystem extends createSystem({
   private mats: MeshBasicMaterial[] = [];
   private setupDone = false;
   private pendingEntity: Entity | null = null;
+  private handpanEntity: Entity | null = null;
 
   // Pulse state
   private pulsingZone = -1;
   private pulseTime = 0;
+  private pulseDurationSec = 0; // 0 = indefinite
 
   // Pending state — applied once indicator meshes are built
   private pendingHighlight: { index: number; style: HighlightStyle } | null = null;
@@ -49,20 +53,21 @@ export class ZoneHighlightSystem extends createSystem({
   init() {
     zoneHighlightManager.highlightZone = (index, style) => this._highlight(index, style);
     zoneHighlightManager.highlightAll = (visible) => this._showAll(visible);
-    zoneHighlightManager.pulseZone = (index, enabled) => this._setPulse(index, enabled);
+    zoneHighlightManager.pulseZone = (index, durationMs = 0) => this._setPulse(index, durationMs);
 
     this.queries.handpans.subscribe("qualify", (entity: Entity) => {
       if (!this.pendingEntity) this.pendingEntity = entity;
+      if (!this.handpanEntity) this.handpanEntity = entity;
     });
 
     // Handpan entity is created before systems register — pick it up immediately
     for (const entity of this.queries.handpans.entities) {
       if (!this.pendingEntity) this.pendingEntity = entity;
+      if (!this.handpanEntity) this.handpanEntity = entity;
     }
   }
 
   update(delta: number, _time: number) {
-    // Build indicators on the first safe frame after the handpan qualifies
     if (!this.setupDone) {
       if (!this.pendingEntity) return;
       this._buildIndicators(this.pendingEntity);
@@ -78,12 +83,24 @@ export class ZoneHighlightSystem extends createSystem({
       }
     }
 
-    // Pulse animation — oscillates opacity of the pulsing zone
-    if (this.pulsingZone >= 0) {
-      this.pulseTime += delta;
-      const pulse = 0.75 + 0.25 * Math.sin(this.pulseTime * 4);
-      this.mats[this.pulsingZone].opacity = pulse;
+    // Sync local offsets if ZONE_OFFSETS were edited at runtime
+    if (this.handpanEntity?.object3D) {
+      for (let i = 0; i < ZONE_OFFSETS.length; i++) {
+        const [ox, oy, oz] = ZONE_OFFSETS[i];
+        this.indicators[i].position.set(ox, oy + 0.04, oz);
+      }
     }
+
+    if (this.pulsingZone < 0) return;
+
+    this.pulseTime += delta;
+    if (this.pulseDurationSec > 0 && this.pulseTime >= this.pulseDurationSec) {
+      this.pulsingZone = -1;
+      return;
+    }
+
+    const pulse = 0.75 + 0.25 * Math.sin(this.pulseTime * 4);
+    this.mats[this.pulsingZone].opacity = pulse;
   }
 
   // ── Private ───────────────────────────────────────────────────────────────
@@ -118,14 +135,29 @@ export class ZoneHighlightSystem extends createSystem({
       return;
     }
 
+    if (style === "idle") {
+      if (index >= 0 && index < this.mats.length) {
+        this.indicators[index].visible = false;
+        this.mats[index].opacity = 0;
+        if (this.pulsingZone === index) this.pulsingZone = -1;
+      }
+      return;
+    }
+
     const color = STYLE_COLORS[style];
     for (let i = 0; i < this.mats.length; i++) {
       this.indicators[i].visible = true;
       this.mats[i].color.setHex(i === index ? color : C_IDLE);
       this.mats[i].opacity = i === index ? 0.85 : 0.10;
     }
-    // Auto-pulse for guided/tutorial styles
-    this.pulsingZone = (style === "guide" || style === "tutorial") ? index : -1;
+
+    if (PULSE_STYLES.has(style)) {
+      this.pulsingZone = index;
+      this.pulseTime = 0;
+      this.pulseDurationSec = 0;
+    } else if (this.pulsingZone === index) {
+      this.pulsingZone = -1;
+    }
   }
 
   private _showAll(visible: boolean): void {
@@ -148,10 +180,12 @@ export class ZoneHighlightSystem extends createSystem({
     }
   }
 
-  private _setPulse(index: number, enabled: boolean): void {
+  private _setPulse(index: number, durationMs: number): void {
     if (!this.setupDone || index < 0 || index >= this.mats.length) return;
     this.indicators[index].visible = true;
-    this.pulsingZone = enabled ? index : -1;
+    this.pulsingZone = index;
     this.pulseTime = 0;
+    this.pulseDurationSec = durationMs > 0 ? durationMs / 1000 : 0;
+    this.mats[index].opacity = 0.85;
   }
 }

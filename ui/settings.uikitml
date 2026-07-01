@@ -452,6 +452,10 @@
     background-color: #f0afc3;
     border-color: #f0afc3;
   }
+  .replay-btn {
+    flex-grow: 0;
+    padding: 1.4 2.8;
+  }
 </style>
 
 <div class="panel">
@@ -550,8 +554,31 @@
 
   <div class="divider"></div>
 
-  <!-- ── Demo ─────────────────────────────────────────────── -->
-  <!-- TEMPORARILY DISABLED: Melody system is not working yet
+  <!-- ── Iconic theme (guided song) ───────────────────────── -->
+  <div class="demo-card">
+    <div class="demo-header">
+      <span class="demo-title">Iconic theme</span>
+      <span class="demo-sub">Follow the lights to play a short melody on the D Kurd.</span>
+    </div>
+    <div class="preset-row">
+      <button class="demo-play-btn" id="learn-song-play">Learn a song</button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Tutorial ─────────────────────────────────────────── -->
+  <div class="toggle-row">
+    <div class="toggle-text">
+      <span class="toggle-title">Tutorial</span>
+      <span class="toggle-sub">Replay the first-time guided intro</span>
+    </div>
+    <button class="rec-action-btn replay-btn" id="tutorial-restart">Replay</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Demo (disabled — replaced by Iconic theme above) ──
   <div class="demo-card">
     <div class="demo-header">
       <span class="demo-title">Take it for a spin</span>
@@ -566,8 +593,6 @@
     </div>
   </div>
   -->
-
-  <div class="divider"></div>
 
   <!-- ── Recording ─────────────────────────────────────────── -->
   <div class="section">
