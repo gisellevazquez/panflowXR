@@ -13,15 +13,11 @@ import {
 
 import { Handpan, HandpanSystem, handpanLockManager, setCustomAudioUrls } from "./handpan.js";
 import { fetchLatestInstrument } from "./instrument-loader.js";
-import { BubbleSystem }           from "./bubbles.js";
+// import { BubbleSystem }           from "./bubbles.js"; // DISABLED
 import { reverbManager }          from "./reverb.js";
 import { ambientManager }         from "./ambient.js";
-import { MenuSystem }             from "./ui.js";
-import { ProductInfoSystem }      from "./product-info.js";
-import { ZoneHighlightSystem }   from "./zone-highlights.js";
-import { MelodySystem }           from "./melody.js";
-import { RecordingSystem, recordingManager } from "./recording-system.js";
-import { LauncherSystem }         from "./launcher.js";
+import { registerUxSystems }      from "./setup/ux-systems.js";
+import { recordingManager }       from "./recording-system.js";
 import { VREnvironmentSystem }    from "./vr-environment.js";
 
 const assets: AssetManifest = {
@@ -150,13 +146,8 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
 
   // ── Systems ───────────────────────────────────────────────────────────────
   world.registerSystem(HandpanSystem);
-  world.registerSystem(BubbleSystem);
-  world.registerSystem(MenuSystem);
-  world.registerSystem(ProductInfoSystem);
-  world.registerSystem(ZoneHighlightSystem);
-  world.registerSystem(MelodySystem);
-  world.registerSystem(RecordingSystem);
-  world.registerSystem(LauncherSystem);
+  // world.registerSystem(BubbleSystem); // DISABLED
+  registerUxSystems(world);
 
   if (isVrMode) {
     world.registerSystem(VREnvironmentSystem);

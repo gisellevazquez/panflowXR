@@ -12,6 +12,8 @@ import {
 
 import { Handpan } from "./handpan.js";
 import { productInfoManager } from "./product-info.js";
+import { melodyManager } from "./melody.js";
+import { tutorialManager } from "./tutorial-system.js";
 
 // Launcher sits this many metres below the handpan centre
 const LAUNCHER_Y_BELOW = 0.48;
@@ -21,6 +23,9 @@ export class LauncherSystem extends createSystem({
 }) {
   private panelEntity: ReturnType<typeof this.world.createTransformEntity> | null = null;
   private _hasHandpan = false;
+  private settingsBtn: any = null;
+  private settingsHighlighted = false;
+  private highlightPhase = 0;
 
   // Pre-allocated scratch vectors — never allocate in update()
   private _hpPos!:   Vector3;
@@ -38,7 +43,7 @@ export class LauncherSystem extends createSystem({
     this.panelEntity.addComponent(PanelUI, {
       config:    "./ui/launcher.json",
       maxWidth:  0.15,
-      maxHeight: 0.45,
+      maxHeight: 0.58,
     });
 
     // Add interactables once XR is active
@@ -66,9 +71,24 @@ export class LauncherSystem extends createSystem({
       }
     };
     setTimeout(pollDoc, 300);
+
+    const onLauncherHighlight = (e: Event) => {
+      this.settingsHighlighted = (e as CustomEvent<{ active: boolean }>).detail.active;
+      this.highlightPhase = 0;
+      if (!this.settingsHighlighted && this.settingsBtn) {
+        this.settingsBtn.setProperties({
+          backgroundColor: 0x221e2b,
+          borderColor: 0x2d2a35,
+        });
+      }
+    };
+    window.addEventListener("panflow-tutorial-highlight-launcher", onLauncherHighlight);
+    this.cleanupFuncs.push(() => {
+      window.removeEventListener("panflow-tutorial-highlight-launcher", onLauncherHighlight);
+    });
   }
 
-  update(_delta: number, _time: number) {
+  update(delta: number, _time: number) {
     if (!this.panelEntity?.object3D || !this.player.head) return;
 
     // Track the handpan's current world position every frame
@@ -88,6 +108,15 @@ export class LauncherSystem extends createSystem({
     this.player.head.getWorldPosition(this._headPos);
     this._headPos.y = obj.position.y;
     obj.lookAt(this._headPos);
+
+    if (this.settingsHighlighted && this.settingsBtn) {
+      this.highlightPhase += delta;
+      const pulse = 0.5 + 0.5 * Math.sin(this.highlightPhase * 5);
+      this.settingsBtn.setProperties({
+        backgroundColor: pulse > 0.5 ? 0x3d3252 : 0x221e2b,
+        borderColor: 0x9e87ce,
+      });
+    }
   }
 
   // ── Private ────────────────────────────────────────────────────────────────
@@ -110,6 +139,14 @@ export class LauncherSystem extends createSystem({
 
     doc.getElementById("launcher-settings")?.addEventListener("click", () => {
       window.dispatchEvent(new Event("panflow-open-settings"));
+    });
+
+    this.settingsBtn = doc.getElementById("launcher-settings") as any;
+
+    doc.getElementById("launcher-song")?.addEventListener("click", () => {
+      if (tutorialManager.active) return;
+      melodyManager.mode = "guided";
+      melodyManager.playing = true;
     });
   }
 }

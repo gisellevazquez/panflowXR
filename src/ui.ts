@@ -16,9 +16,10 @@ import {
 
 import { reverbManager }  from "./reverb.js";
 import { ambientManager, AmbientType } from "./ambient.js";
-import { bubbleManager }      from "./bubbles.js";
+// import { bubbleManager }      from "./bubbles.js"; // DISABLED
 import { productInfoManager } from "./product-info.js";
-import { melodyManager, MelodyMode } from "./melody.js";
+import { melodyManager } from "./melody.js";
+import { tutorialManager } from "./tutorial-system.js";
 import { Handpan } from "./handpan.js";
 import { recordingManager } from "./recording-system.js";
 
@@ -288,23 +289,24 @@ export class MenuSystem extends createSystem({
       });
     }
 
-    // ─ Bubble toggle ──────────────────────────────────────────────────────
-    const bubblePill  = doc.getElementById("bubble-toggle") as any;
-    const bubbleKnob  = doc.getElementById("bubble-knob")   as any;
-    const bubbleSpace = doc.getElementById("bubble-space")  as any;
-
-    const setBubbleToggle = (on: boolean) => {
-      bubblePill?.setProperties ({ backgroundColor: on ? 0x3d1428 : 0x27272a, borderColor: on ? 0xe89ab4 : 0x27272a });
-      bubbleKnob?.setProperties ({ backgroundColor: on ? 0xf5f5f5 : 0x52525b });
-      bubbleSpace?.setProperties({ flexGrow: on ? 1 : 0 });
-    };
-
-    setBubbleToggle(bubbleManager.enabled);
-
-    doc.getElementById("bubble-toggle")?.addEventListener("click", () => {
-      bubbleManager.enabled = !bubbleManager.enabled;
-      setBubbleToggle(bubbleManager.enabled);
-    });
+    // ─ Bubble toggle (DISABLED) ──────────────────────────────────────────
+    //
+    // const bubblePill  = doc.getElementById("bubble-toggle") as any;
+    // const bubbleKnob  = doc.getElementById("bubble-knob")   as any;
+    // const bubbleSpace = doc.getElementById("bubble-space")  as any;
+    //
+    // const setBubbleToggle = (on: boolean) => {
+    //   bubblePill?.setProperties ({ backgroundColor: on ? 0x3d1428 : 0x27272a, borderColor: on ? 0xe89ab4 : 0x27272a });
+    //   bubbleKnob?.setProperties ({ backgroundColor: on ? 0xf5f5f5 : 0x52525b });
+    //   bubbleSpace?.setProperties({ flexGrow: on ? 1 : 0 });
+    // };
+    //
+    // setBubbleToggle(bubbleManager.enabled);
+    //
+    // doc.getElementById("bubble-toggle")?.addEventListener("click", () => {
+    //   bubbleManager.enabled = !bubbleManager.enabled;
+    //   setBubbleToggle(bubbleManager.enabled);
+    // });
 
     // ─ Product info toggle ────────────────────────────────────────────────
     const productPill  = doc.getElementById("product-info-toggle") as any;
@@ -324,8 +326,39 @@ export class MenuSystem extends createSystem({
       setProductToggle(productInfoManager.enabled);
     });
 
-    // ─ Demo mode pills ────────────────────────────────────────────────────
-    // TEMPORARILY DISABLED: Melody system is not working yet
+    // ── Iconic theme — learn a song (guided melody) ───────────────────────
+    const learnSongBtn = doc.getElementById("learn-song-play") as any;
+
+    const setLearnSongBtn = (playing: boolean) => {
+      learnSongBtn?.setProperties(playing
+        ? { text: "■  Stop", backgroundColor: 0x3d1428, borderColor: 0xe89ab4, color: 0xe89ab4 }
+        : { text: "Learn a song", backgroundColor: 0xe89ab4, borderColor: 0xe89ab4, color: 0x2a1820 });
+    };
+
+    setLearnSongBtn(melodyManager.playing);
+
+    learnSongBtn?.addEventListener("click", () => {
+      if (tutorialManager.active) return;
+      if (melodyManager.playing) {
+        melodyManager.playing = false;
+      } else {
+        melodyManager.mode = "guided";
+        melodyManager.playing = true;
+      }
+      setLearnSongBtn(melodyManager.playing);
+    });
+
+    window.addEventListener("melody-ended", () => {
+      melodyManager.playing = false;
+      setLearnSongBtn(false);
+    });
+
+    // ── Tutorial replay ───────────────────────────────────────────────────
+    doc.getElementById("tutorial-restart")?.addEventListener("click", () => {
+      window.dispatchEvent(new Event("panflow-restart-tutorial"));
+    });
+
+    // ── Demo mode pills (legacy — kept commented) ─────────────────────────
     /*
     const setDemoMode = (mode: MelodyMode) => {
       melodyManager.mode = mode;
