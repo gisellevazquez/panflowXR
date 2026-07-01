@@ -56,33 +56,32 @@
 
     .sb-section { padding: 10px 14px 12px; border-bottom: 1px solid #222; }
     .sb-section h2 { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+    .sb-hint { font-size: 10px; color: #555; margin-top: 6px; line-height: 1.4; }
 
-    /* Instrument selector */
-    .instrument-grid { display: flex; flex-direction: column; gap: 5px; }
-    .instrument-btn {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 10px; border-radius: 7px; border: 1px solid #2a2a2a;
-      background: #111; cursor: pointer; text-align: left;
-      transition: background .15s, border-color .15s;
-      width: 100%;
+    /* Material selector */
+    .material-select {
+      width: 100%; background: #111; border: 1px solid #2a2a2a;
+      border-radius: 6px; color: #ccc; font-size: 12px; padding: 7px 8px;
+      cursor: pointer; outline: none;
     }
-    .instrument-btn.active {
-      border-color: #4a7a5c; background: #0e1f15;
+    .material-select:focus { border-color: #4a7a5c; }
+
+    /* Zone count */
+    .zone-count-row { display: flex; align-items: center; gap: 6px; }
+    .zone-count-btn {
+      width: 28px; height: 28px; border-radius: 6px; border: 1px solid #333;
+      background: #1e1e1e; color: #bbb; cursor: pointer; font-size: 16px;
+      line-height: 1; flex-shrink: 0; transition: background .15s;
     }
-    .instrument-btn.disabled {
-      opacity: .38; cursor: not-allowed;
+    .zone-count-btn:hover { background: #2a2a2a; }
+    #zone-count-input {
+      flex: 1; text-align: center; background: #111; border: 1px solid #2a2a2a;
+      border-radius: 6px; color: #ccc; font-size: 13px; padding: 5px 4px;
+      outline: none; -moz-appearance: textfield;
     }
-    .instr-icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
-    .instr-info { display: flex; flex-direction: column; gap: 2px; }
-    .instr-name { font-size: 12px; font-weight: 600; color: #ccc; }
-    .instrument-btn.active .instr-name { color: #7ec87e; }
-    .instr-sub { font-size: 10px; color: #555; letter-spacing: .04em; }
-    .instrument-btn.active .instr-sub { color: #4a7a5c; }
-    .coming-tag {
-      margin-left: auto; font-size: 9px; letter-spacing: .08em;
-      color: #3a3a3a; border: 1px solid #2a2a2a; border-radius: 4px;
-      padding: 2px 6px; white-space: nowrap; flex-shrink: 0;
-    }
+    #zone-count-input::-webkit-outer-spin-button,
+    #zone-count-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    #zone-count-input:focus { border-color: #4a7a5c; }
 
     /* Model upload */
     .upload-row { display: flex; align-items: center; gap: 8px; }
@@ -128,7 +127,7 @@
     #sounds-count { font-size: 11px; color: #555; }
     #sounds-count.loaded { color: #6eb89a; }
 
-    #zone-sound-list { display: flex; flex-direction: column; gap: 4px; }
+    #zone-sound-list { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
     .zone-sound-row {
       display: flex; align-items: center; gap: 7px;
       padding: 4px 6px; border-radius: 5px; background: #111;
@@ -151,8 +150,8 @@
     #export-code {
       width: 100%; resize: none; background: #0a0a0a; border: 1px solid #222;
       border-radius: 6px; padding: 8px; color: #9dc; font-family: monospace;
-      font-size: 10px; line-height: 1.5; outline: none; min-height: 110px;
-      max-height: 220px;
+      font-size: 10px; line-height: 1.5; outline: none; min-height: 140px;
+      max-height: 280px;
     }
     #copy-btn {
       width: 100%; margin-top: 7px; padding: 8px; border-radius: 6px;
@@ -187,42 +186,17 @@
   <!-- ── Sidebar ── -->
   <div id="sidebar">
 
-    <!-- Instrument type -->
+    <!-- Material -->
     <div class="sb-section">
-      <h2>Instrument type</h2>
-      <div class="instrument-grid">
-        <button class="instrument-btn active" disabled>
-          <span class="instr-icon">🥁</span>
-          <div class="instr-info">
-            <span class="instr-name">Handpan</span>
-            <span class="instr-sub">9-zone percussion</span>
-          </div>
-        </button>
-        <button class="instrument-btn disabled" disabled title="Coming soon">
-          <span class="instr-icon">🪘</span>
-          <div class="instr-info">
-            <span class="instr-name">Tibetan Bowl</span>
-            <span class="instr-sub">Singing bowls</span>
-          </div>
-          <span class="coming-tag">soon</span>
-        </button>
-        <button class="instrument-btn disabled" disabled title="Coming soon">
-          <span class="instr-icon">🎸</span>
-          <div class="instr-info">
-            <span class="instr-name">Bass</span>
-            <span class="instr-sub">String instrument</span>
-          </div>
-          <span class="coming-tag">soon</span>
-        </button>
-        <button class="instrument-btn disabled" disabled title="Coming soon">
-          <span class="instr-icon">✦</span>
-          <div class="instr-info">
-            <span class="instr-name">Custom</span>
-            <span class="instr-sub">Any instrument</span>
-          </div>
-          <span class="coming-tag">soon</span>
-        </button>
-      </div>
+      <h2>Material</h2>
+      <select id="material-select" class="material-select">
+        <option value="raw_steel">Raw steel</option>
+        <option value="steel_coated">Steel coated</option>
+        <option value="nitrided_steel" selected>Nitrided steel</option>
+        <option value="stainless_steel">Stainless steel</option>
+        <option value="ember_steel">Ember steel</option>
+      </select>
+      <p class="sb-hint">Handpan — map tone fields for this material</p>
     </div>
 
     <!-- Model upload -->
@@ -232,6 +206,16 @@
         <label class="upload-btn" for="model-input-sb">Load .glb</label>
         <input type="file" id="model-input-sb" accept=".glb,.gltf" style="display:none">
         <span class="upload-name" id="model-name">No model loaded</span>
+      </div>
+    </div>
+
+    <!-- Zone count -->
+    <div class="sb-section">
+      <h2>Zone count</h2>
+      <div class="zone-count-row">
+        <button type="button" class="zone-count-btn" id="zone-count-dec" title="Fewer zones">−</button>
+        <input type="number" id="zone-count-input" value="9" min="1" step="1">
+        <button type="button" class="zone-count-btn" id="zone-count-inc" title="More zones">+</button>
       </div>
     </div>
 
@@ -272,9 +256,9 @@
 
     <!-- Export -->
     <div class="sb-section" style="flex:1;display:flex;flex-direction:column;">
-      <h2>Export code</h2>
+      <h2>Export</h2>
       <textarea id="export-code" readonly spellcheck="false"></textarea>
-      <button id="copy-btn">Copy TypeScript</button>
+      <button id="copy-btn">Copy export</button>
     </div>
 
     <div id="status">Load a .glb model to begin</div>
@@ -288,20 +272,36 @@ import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader }   from 'three/addons/loaders/DRACOLoader.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const NUM_ZONES = 9;
-const ZONE_NAMES = ['Ding', '1', '2', '3', '4', '5', '6', '7', '8'];
+const DEFAULT_ZONE_COUNT = 9;
+const MATERIALS = ['raw_steel', 'steel_coated', 'nitrided_steel', 'stainless_steel', 'ember_steel'];
 const ZONE_COLORS_HEX = [
   '#FFD700','#FF6B6B','#FF8C42','#FFEB3B','#6BCB77',
   '#4D96FF','#AB7CFF','#F15BB5','#40E0D0',
 ];
-const ZONE_COLORS_THREE = ZONE_COLORS_HEX.map(c => parseInt(c.slice(1), 16));
+
+function getZoneName(i) { return i === 0 ? 'Ding' : String(i); }
+function getZoneColorHex(i) { return ZONE_COLORS_HEX[i % ZONE_COLORS_HEX.length]; }
+function getZoneColorThree(i) { return parseInt(getZoneColorHex(i).slice(1), 16); }
+function getDefaultRadius(i) { return i === 0 ? 0.18 : 0.15; }
 
 // ── State ─────────────────────────────────────────────────────────────────────
-const zones = Array.from({ length: NUM_ZONES }, () => ({ position: null, placed: false }));
-const zoneSounds = Array(NUM_ZONES).fill(null); // filename string | null
-let loadedSoundFiles = []; // array of File objects
+let zoneCount = DEFAULT_ZONE_COUNT;
+let selectedMaterial = 'nitrided_steel';
+let zones = [];
+let zoneSounds = [];
+let loadedSoundFiles = [];
 let selectedZone = 0;
 let handpanGroup = null;
+
+const zoneMeshes = [];
+const labelEls = [];
+const btnEls = [];
+const soundSelects = [];
+
+const labelsContainer = document.getElementById('labels');
+const zoneGrid = document.getElementById('zone-grid');
+const zoneSoundList = document.getElementById('zone-sound-list');
+const diskGeometry = new THREE.CircleGeometry(0.10, 48);
 
 // ── Three.js setup ────────────────────────────────────────────────────────────
 const canvas   = document.getElementById('vp');
@@ -330,15 +330,24 @@ scene.add(fill);
 const grid = new THREE.GridHelper(3, 30, 0x222222, 0x1a1a1a);
 scene.add(grid);
 
-// ── Zone markers ──────────────────────────────────────────────────────────────
-const diskGeometry = new THREE.CircleGeometry(0.10, 48);
-const zoneMeshes   = [];
-const labelEls     = [];
-const labelsContainer = document.getElementById('labels');
+// ── Zone UI / 3D rebuild ──────────────────────────────────────────────────────
+function disposeZoneMesh(mesh) {
+  scene.remove(mesh);
+  mesh.geometry?.dispose();
+  if (mesh.material) {
+    if (Array.isArray(mesh.material)) mesh.material.forEach(m => m.dispose());
+    else mesh.material.dispose();
+  }
+  const ring = mesh.userData.ring;
+  if (ring) {
+    ring.geometry?.dispose();
+    ring.material?.dispose();
+  }
+}
 
-for (let i = 0; i < NUM_ZONES; i++) {
-  const mat  = new THREE.MeshBasicMaterial({
-    color: ZONE_COLORS_THREE[i], transparent: true, opacity: 0.55,
+function createZoneMesh(i) {
+  const mat = new THREE.MeshBasicMaterial({
+    color: getZoneColorThree(i), transparent: true, opacity: 0.55,
     side: THREE.DoubleSide, depthWrite: false,
   });
   const disk = new THREE.Mesh(diskGeometry, mat);
@@ -346,7 +355,6 @@ for (let i = 0; i < NUM_ZONES; i++) {
   disk.rotation.x = -Math.PI / 2;
   disk.userData.zoneIndex = i;
   scene.add(disk);
-  zoneMeshes.push(disk);
 
   const ringGeo = new THREE.RingGeometry(0.095, 0.105, 48);
   const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
@@ -356,47 +364,43 @@ for (let i = 0; i < NUM_ZONES; i++) {
   ring.visible = false;
   disk.add(ring);
   disk.userData.ring = ring;
+  return disk;
+}
 
+function createZoneLabel(i) {
   const lbl = document.createElement('div');
   lbl.className = 'zone-label';
   lbl.textContent = String(i);
-  lbl.style.background = ZONE_COLORS_HEX[i];
+  lbl.style.background = getZoneColorHex(i);
   lbl.style.display = 'none';
   labelsContainer.appendChild(lbl);
-  labelEls.push(lbl);
+  return lbl;
 }
 
-// ── Sidebar zone buttons ──────────────────────────────────────────────────────
-const zoneGrid = document.getElementById('zone-grid');
-const btnEls   = [];
-
-for (let i = 0; i < NUM_ZONES; i++) {
+function createZoneButton(i) {
   const btn = document.createElement('button');
   btn.className = 'zone-btn';
-  btn.textContent = ZONE_NAMES[i];
-  btn.style.background  = ZONE_COLORS_HEX[i] + '44';
-  btn.style.borderColor = ZONE_COLORS_HEX[i];
+  btn.textContent = getZoneName(i);
+  const color = getZoneColorHex(i);
+  btn.style.background = color + '44';
+  btn.style.borderColor = color;
   btn.onclick = () => selectZone(i);
   zoneGrid.appendChild(btn);
-  btnEls.push(btn);
+  return btn;
 }
 
-// ── Sound assignment rows ─────────────────────────────────────────────────────
-const zoneSoundList = document.getElementById('zone-sound-list');
-const soundSelects  = [];
-
-for (let i = 0; i < NUM_ZONES; i++) {
+function createSoundRow(i) {
   const row = document.createElement('div');
   row.className = 'zone-sound-row';
 
   const dot = document.createElement('div');
   dot.className = 'zs-dot';
-  dot.style.background = ZONE_COLORS_HEX[i];
+  dot.style.background = getZoneColorHex(i);
   dot.textContent = String(i);
 
   const name = document.createElement('span');
   name.className = 'zs-name';
-  name.textContent = ZONE_NAMES[i];
+  name.textContent = getZoneName(i);
 
   const sel = document.createElement('select');
   sel.className = 'zs-select';
@@ -415,8 +419,116 @@ for (let i = 0; i < NUM_ZONES; i++) {
   row.appendChild(name);
   row.appendChild(sel);
   zoneSoundList.appendChild(row);
-  soundSelects.push(sel);
+  return sel;
 }
+
+function rebuildZoneArrays(newCount) {
+  const oldZones = zones;
+  const oldSounds = zoneSounds;
+
+  zones = Array.from({ length: newCount }, (_, i) => {
+    if (i < oldZones.length) return { position: oldZones[i].position, placed: oldZones[i].placed };
+    return { position: null, placed: false };
+  });
+  zoneSounds = Array.from({ length: newCount }, (_, i) => (i < oldSounds.length ? oldSounds[i] : null));
+
+  while (zoneMeshes.length > newCount) {
+    const mesh = zoneMeshes.pop();
+    disposeZoneMesh(mesh);
+    labelEls.pop()?.remove();
+  }
+
+  zoneGrid.innerHTML = '';
+  zoneSoundList.innerHTML = '';
+  btnEls.length = 0;
+  soundSelects.length = 0;
+
+  for (let i = 0; i < newCount; i++) {
+    if (!zoneMeshes[i]) zoneMeshes.push(createZoneMesh(i));
+
+    if (!labelEls[i]) {
+      labelEls.push(createZoneLabel(i));
+    } else {
+      labelEls[i].textContent = String(i);
+      labelEls[i].style.background = getZoneColorHex(i);
+    }
+
+    const btn = createZoneButton(i);
+    btnEls.push(btn);
+    soundSelects.push(createSoundRow(i));
+
+    if (zones[i].placed && zones[i].position) {
+      const disk = zoneMeshes[i];
+      disk.position.copy(zones[i].position);
+      disk.position.y += 0.003;
+      disk.rotation.x = -Math.PI / 2;
+      disk.visible = true;
+      btn.classList.add('placed');
+    } else {
+      zoneMeshes[i].visible = false;
+    }
+  }
+
+  rebuildSoundOptions();
+  if (selectedZone >= newCount) selectedZone = newCount - 1;
+  selectZone(selectedZone);
+  updateExport();
+}
+
+function setZoneCount(newCount, { force = false } = {}) {
+  const parsed = Math.max(1, Math.floor(Number(newCount)) || 1);
+  if (parsed === zoneCount) {
+    document.getElementById('zone-count-input').value = String(zoneCount);
+    return;
+  }
+
+  if (!force && parsed < zoneCount) {
+    const removedPlaced = [];
+    for (let i = parsed; i < zoneCount; i++) {
+      if (zones[i]?.placed) removedPlaced.push(i);
+    }
+    if (removedPlaced.length > 0) {
+      const names = removedPlaced.map(i => `${i} (${getZoneName(i)})`).join(', ');
+      const ok = confirm(
+        `Reducing to ${parsed} zone(s) will remove placed zones: ${names}.\n\nContinue?`
+      );
+      if (!ok) {
+        document.getElementById('zone-count-input').value = String(zoneCount);
+        return;
+      }
+    }
+  }
+
+  zoneCount = parsed;
+  document.getElementById('zone-count-input').value = String(zoneCount);
+  rebuildZoneArrays(zoneCount);
+  setStatus(`Zone count set to ${zoneCount}`);
+}
+
+// ── Material selector ─────────────────────────────────────────────────────────
+document.getElementById('material-select').addEventListener('change', (e) => {
+  selectedMaterial = e.target.value;
+  if (!MATERIALS.includes(selectedMaterial)) selectedMaterial = 'nitrided_steel';
+  updateExport();
+});
+
+// ── Zone count controls ───────────────────────────────────────────────────────
+document.getElementById('zone-count-dec').addEventListener('click', () => {
+  setZoneCount(zoneCount - 1);
+});
+document.getElementById('zone-count-inc').addEventListener('click', () => {
+  setZoneCount(zoneCount + 1);
+});
+document.getElementById('zone-count-input').addEventListener('change', (e) => {
+  setZoneCount(e.target.value);
+});
+document.getElementById('zone-count-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    setZoneCount(e.target.value);
+    e.target.blur();
+  }
+});
 
 // ── GLTF Loader ───────────────────────────────────────────────────────────────
 const dracoLoader = new DRACOLoader();
@@ -463,17 +575,13 @@ function handleModelFile(file) {
   loadModelFromURL(url, file.name);
 }
 
-// Model upload — sidebar
 document.getElementById('model-input-sb').addEventListener('change', (e) => {
   handleModelFile(e.target.files[0]);
 });
-
-// Model upload — drop overlay button
 document.getElementById('model-input-drop').addEventListener('change', (e) => {
   handleModelFile(e.target.files[0]);
 });
 
-// Drag-and-drop on viewport
 const dropOverlay = document.getElementById('drop-overlay');
 const vpWrap = document.getElementById('vp-wrap');
 
@@ -501,22 +609,21 @@ document.getElementById('sounds-input').addEventListener('change', (e) => {
 });
 
 function rebuildSoundOptions() {
-  for (let i = 0; i < NUM_ZONES; i++) {
+  for (let i = 0; i < zoneCount; i++) {
     const sel = soundSelects[i];
+    if (!sel) continue;
     const current = sel.value;
-    // Clear existing options (keep "none")
     sel.innerHTML = '';
     const none = document.createElement('option');
-    none.value = ''; none.textContent = '— none —';
+    none.value = '';
+    none.textContent = '— none —';
     sel.appendChild(none);
-    // Add loaded files
     for (const f of loadedSoundFiles) {
       const opt = document.createElement('option');
       opt.value = f.name;
       opt.textContent = f.name;
       sel.appendChild(opt);
     }
-    // Restore previous selection if still available
     if (current && loadedSoundFiles.some(f => f.name === current)) {
       sel.value = current;
     } else {
@@ -541,11 +648,9 @@ renderer.domElement.addEventListener('mouseup', (e) => {
   mouse2d.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
   raycaster.setFromCamera(mouse2d, camera);
 
-  // Click on existing disk → select it
   const diskHits = raycaster.intersectObjects(zoneMeshes.filter(m => m.visible), false);
   if (diskHits.length > 0) { selectZone(diskHits[0].object.userData.zoneIndex); return; }
 
-  // Click on model → place zone
   if (!handpanGroup) return;
   const modelHits = raycaster.intersectObject(handpanGroup, true);
   if (modelHits.length > 0) {
@@ -556,8 +661,8 @@ renderer.domElement.addEventListener('mouseup', (e) => {
 });
 
 function findNextUnplaced(from) {
-  for (let i = 1; i <= NUM_ZONES; i++) {
-    const idx = (from + i) % NUM_ZONES;
+  for (let i = 1; i <= zoneCount; i++) {
+    const idx = (from + i) % zoneCount;
     if (!zones[idx].placed) return idx;
   }
   return -1;
@@ -596,7 +701,7 @@ function clearZone(i) {
   updateExport();
 }
 
-function clearAll() { for (let i = 0; i < NUM_ZONES; i++) clearZone(i); }
+function clearAll() { for (let i = 0; i < zoneCount; i++) clearZone(i); }
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
 const fmt = v => (v >= 0 ? ' ' : '') + v.toFixed(3);
@@ -604,7 +709,7 @@ const fmt = v => (v >= 0 ? ' ' : '') + v.toFixed(3);
 function updateInfoPanel() {
   const z = zones[selectedZone];
   document.getElementById('zone-name').textContent =
-    `Zone ${selectedZone} — ${ZONE_NAMES[selectedZone]}${z.placed ? ' ✓' : ''}`;
+    `Zone ${selectedZone} — ${getZoneName(selectedZone)}${z.placed ? ' ✓' : ''}`;
   const c = document.getElementById('coords');
   if (z.placed) {
     const p = z.position;
@@ -612,6 +717,18 @@ function updateInfoPanel() {
   } else {
     c.innerHTML = `<span>x</span> — &nbsp; <span>y</span> — &nbsp; <span>z</span> —`;
   }
+}
+
+function buildZoneOffsets() {
+  return zones.map((z) => {
+    if (!z.placed) return [0, 0, 0];
+    const p = z.position;
+    return [parseFloat(p.x.toFixed(4)), parseFloat(p.y.toFixed(4)), parseFloat(p.z.toFixed(4))];
+  });
+}
+
+function buildZoneRadii() {
+  return zones.map((_, i) => getDefaultRadius(i));
 }
 
 function updateExport() {
@@ -622,6 +739,12 @@ function updateExport() {
     return `  [${fmt(p.x)}, ${fmt(p.y)}, ${fmt(p.z)}],${tag}`;
   });
 
+  const radiiLines = zones.map((_, i) => {
+    const r = getDefaultRadius(i);
+    const tag = i === 0 ? ' // 0 Ding — wider' : ` // ${i}`;
+    return `  ${r.toFixed(2)},${tag}`;
+  });
+
   const soundLines = zones.map((_, i) => {
     const snd = zoneSounds[i];
     const tag  = i === 0 ? ' // 0 Ding' : ` // ${i}`;
@@ -630,18 +753,31 @@ function updateExport() {
 
   const hasSounds = zoneSounds.some(s => s !== null);
 
-  document.getElementById('export-code').value =
+  const exportJson = {
+    material: selectedMaterial,
+    zone_count: zoneCount,
+    zone_offsets: buildZoneOffsets(),
+    zone_radii: buildZoneRadii(),
+    model_scale: 1.0,
+  };
+
+  const tsBlock =
     `// Paste into your project's handpan / instrument system\n\n` +
     `const ZONE_OFFSETS: [number, number, number][] = [\n` +
     posLines.join('\n') + '\n];\n\n' +
     `const ZONE_RADII: number[] = [\n` +
-    `  0.18, // 0 Ding — wider\n` +
-    zones.slice(1).map((_, i) => `  0.15, // ${i + 1}`).join('\n') + '\n];\n' +
+    radiiLines.join('\n') + '\n];\n' +
     (hasSounds
       ? `\n// Zone → audio file mapping\n// Put these files in your project's audio folder\n` +
         `const ZONE_SOUNDS: (string | null)[] = [\n` +
         soundLines.join('\n') + '\n];\n'
       : '');
+
+  document.getElementById('export-code').value =
+    `// JSON (for Supabase / upload pipeline)\n` +
+    JSON.stringify(exportJson, null, 2) + '\n\n' +
+    `// TypeScript (dev convenience)\n` +
+    tsBlock;
 }
 
 function setStatus(msg) { document.getElementById('status').textContent = msg; }
@@ -656,7 +792,7 @@ document.getElementById('copy-btn').onclick = () => {
   const done = () => {
     btn.textContent = '✓ Copied';
     btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy TypeScript'; btn.classList.remove('copied'); }, 2000);
+    setTimeout(() => { btn.textContent = 'Copy export'; btn.classList.remove('copied'); }, 2000);
   };
   if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(ta.value).then(done).catch(() => { ta.select(); document.execCommand('copy'); done(); });
@@ -679,9 +815,9 @@ onResize();
 const _proj = new THREE.Vector3();
 function updateLabels() {
   const w = canvas.clientWidth, h = canvas.clientHeight;
-  for (let i = 0; i < NUM_ZONES; i++) {
+  for (let i = 0; i < zoneCount; i++) {
     const lbl = labelEls[i], disk = zoneMeshes[i];
-    if (!disk.visible) { lbl.style.display = 'none'; continue; }
+    if (!disk?.visible) { if (lbl) lbl.style.display = 'none'; continue; }
     _proj.copy(disk.position).project(camera);
     if (_proj.z > 1) { lbl.style.display = 'none'; continue; }
     lbl.style.display = 'flex';
@@ -698,7 +834,8 @@ function animate() {
 }
 animate();
 
-selectZone(0);
+// ── Init ──────────────────────────────────────────────────────────────────────
+setZoneCount(DEFAULT_ZONE_COUNT, { force: true });
 updateExport();
 </script>
 </body>
