@@ -109,11 +109,16 @@ export class LauncherSystem extends createSystem({
       this.tutorialShowLauncher = show;
       this._setLauncherVisible(show);
     };
+    const onToggleLauncher = () => {
+      if (this.tutorialUiLocked) return;
+      this._setLauncherVisible(!this.launcherRevealed);
+    };
 
     window.addEventListener("panflow-tutorial-started", onTutorialStarted);
     window.addEventListener("panflow-tutorial-ended", onTutorialEnded);
     window.addEventListener("panflow-xr-started", onXrStarted);
     window.addEventListener("panflow-tutorial-show-launcher", onTutorialShowLauncher);
+    window.addEventListener("panflow-toggle-launcher", onToggleLauncher);
 
     this.cleanupFuncs.push(() => {
       window.removeEventListener("panflow-tutorial-highlight-launcher", onLauncherHighlight);
@@ -121,6 +126,7 @@ export class LauncherSystem extends createSystem({
       window.removeEventListener("panflow-tutorial-ended", onTutorialEnded);
       window.removeEventListener("panflow-xr-started", onXrStarted);
       window.removeEventListener("panflow-tutorial-show-launcher", onTutorialShowLauncher);
+      window.removeEventListener("panflow-toggle-launcher", onToggleLauncher);
     });
   }
 
