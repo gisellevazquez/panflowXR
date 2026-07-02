@@ -13,6 +13,7 @@ import {
 
 import { Handpan } from "./handpan.js";
 import { instrumentStore } from "./instrument-store.js";
+import { tutorialManager } from "./tutorial-system.js";
 
 export const productInfoManager = { enabled: true };
 
@@ -27,6 +28,7 @@ export class ProductInfoSystem extends createSystem({
   private panelDoc:        UIKitDocument | null = null;
   private documentWiredUp                = false;
   private prevVisible                    = false;
+  private tutorialUiLocked               = true;
 
   // Pre-allocated — never allocate in update()
   private handpanPos = new Vector3();
@@ -60,12 +62,37 @@ export class ProductInfoSystem extends createSystem({
 
     // Launcher "Product" button force-shows this panel regardless of proximity
     const openHandler = () => {
+      if (this.tutorialUiLocked) return;
       this.prevVisible = false; // force re-evaluation on next update
       this._setVisible(true);
       this.prevVisible = true;
     };
     window.addEventListener("panflow-open-product", openHandler);
-    this.cleanupFuncs.push(() => window.removeEventListener("panflow-open-product", openHandler));
+    const onTutorialStarted = () => {
+      this.tutorialUiLocked = true;
+      this.prevVisible = false;
+      this._setVisible(false);
+    };
+    const onTutorialEnded = () => {
+      this.tutorialUiLocked = false;
+      this.prevVisible = false;
+      this._setVisible(false);
+    };
+    const onXrStarted = () => {
+      this.tutorialUiLocked = true;
+      this.prevVisible = false;
+      this._setVisible(false);
+    };
+
+    window.addEventListener("panflow-tutorial-started", onTutorialStarted);
+    window.addEventListener("panflow-tutorial-ended", onTutorialEnded);
+    window.addEventListener("panflow-xr-started", onXrStarted);
+    this.cleanupFuncs.push(() => {
+      window.removeEventListener("panflow-open-product", openHandler);
+      window.removeEventListener("panflow-tutorial-started", onTutorialStarted);
+      window.removeEventListener("panflow-tutorial-ended", onTutorialEnded);
+      window.removeEventListener("panflow-xr-started", onXrStarted);
+    });
 
     // Wire document once PanelUI has loaded its config
     this.queries.configuredPanels.subscribe("qualify", (entity: Entity) => {
@@ -91,7 +118,7 @@ export class ProductInfoSystem extends createSystem({
     this.player.head.getWorldPosition(this.headPos);
 
     const dist       = this.headPos.distanceTo(this.handpanPos);
-    const shouldShow = productInfoManager.enabled && dist < PROXIMITY_DIST;
+    const shouldShow = !this.tutorialUiLocked && !tutorialManager.active && productInfoManager.enabled && dist < PROXIMITY_DIST;
 
     if (shouldShow) {
       // Float to the right of the handpan, slightly raised

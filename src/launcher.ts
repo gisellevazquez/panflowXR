@@ -22,10 +22,13 @@ export class LauncherSystem extends createSystem({
   handpans: { required: [Handpan] },
 }) {
   private panelEntity: ReturnType<typeof this.world.createTransformEntity> | null = null;
+  private panelDoc: UIKitDocument | null = null;
   private _hasHandpan = false;
   private settingsBtn: any = null;
   private settingsHighlighted = false;
   private highlightPhase = 0;
+  private launcherRevealed = false;
+  private tutorialUiLocked = true;
 
   // Pre-allocated scratch vectors — never allocate in update()
   private _hpPos!:   Vector3;
@@ -36,7 +39,7 @@ export class LauncherSystem extends createSystem({
     this._headPos = new Vector3();
 
     const group   = new Group();
-    group.visible = true;
+    group.visible = false;
 
     this.panelEntity = this.world.createTransformEntity(group, { parent: this.world.sceneEntity });
 
@@ -83,13 +86,34 @@ export class LauncherSystem extends createSystem({
       }
     };
     window.addEventListener("panflow-tutorial-highlight-launcher", onLauncherHighlight);
+
+    const onTutorialStarted = () => {
+      this.tutorialUiLocked = true;
+      this._setLauncherVisible(false);
+    };
+    const onTutorialEnded = () => {
+      this.tutorialUiLocked = false;
+      this._setLauncherVisible(true);
+    };
+    const onXrStarted = () => {
+      this.tutorialUiLocked = true;
+      this._setLauncherVisible(false);
+    };
+
+    window.addEventListener("panflow-tutorial-started", onTutorialStarted);
+    window.addEventListener("panflow-tutorial-ended", onTutorialEnded);
+    window.addEventListener("panflow-xr-started", onXrStarted);
+
     this.cleanupFuncs.push(() => {
       window.removeEventListener("panflow-tutorial-highlight-launcher", onLauncherHighlight);
+      window.removeEventListener("panflow-tutorial-started", onTutorialStarted);
+      window.removeEventListener("panflow-tutorial-ended", onTutorialEnded);
+      window.removeEventListener("panflow-xr-started", onXrStarted);
     });
   }
 
   update(delta: number, _time: number) {
-    if (!this.panelEntity?.object3D || !this.player.head) return;
+    if (this.tutorialUiLocked || !this.launcherRevealed || !this.panelEntity?.object3D || !this.player.head) return;
 
     // Track the handpan's current world position every frame
     this._hasHandpan = false;
@@ -121,7 +145,22 @@ export class LauncherSystem extends createSystem({
 
   // ── Private ────────────────────────────────────────────────────────────────
 
+  private _setLauncherVisible(visible: boolean): void {
+    this.launcherRevealed = visible;
+    if (this.panelEntity?.object3D) {
+      this.panelEntity.object3D.visible = visible;
+    }
+    if (this.panelDoc) {
+      (this.panelDoc.rootElement as any).setProperties({
+        display: visible ? "flex" : "none",
+      });
+    }
+  }
+
   private _wirePanel(doc: UIKitDocument): void {
+    this.panelDoc = doc;
+    this._setLauncherVisible(this.launcherRevealed);
+
     // Make panel double-sided
     setTimeout(() => {
       this.panelEntity?.object3D?.traverse((obj: any) => {

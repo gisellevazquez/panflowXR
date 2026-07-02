@@ -126,7 +126,6 @@ export class TutorialSystem extends createSystem({
     };
 
     const onXrStarted = () => {
-      if (localStorage.getItem(TUTORIAL_DONE_KEY) === "1") return;
       this._start();
     };
 
@@ -201,6 +200,8 @@ export class TutorialSystem extends createSystem({
 
   private _start(): void {
     if (tutorialManager.active) return;
+
+    window.dispatchEvent(new Event("panflow-tutorial-started"));
 
     tutorialManager.active = true;
     this.stepIndex = 0;
