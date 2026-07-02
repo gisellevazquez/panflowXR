@@ -3,6 +3,7 @@ import {
   fetchInstrumentById,
   fetchLocalInstrumentById,
   fetchLocalLatestInstrument,
+  fetchStoreCatalog,
   type CustomInstrument,
   type InstrumentSource,
 } from "../instrument-loader.js";
@@ -28,7 +29,7 @@ async function loadInstrument(
 }
 
 /**
- * Per-instrument pipeline: parses ?instrument= and ?source= from URL,
+ * Per-instrument pipeline: parses ?instrument=, ?store=, and ?source= from URL,
  * fetches from Supabase or panflow-data, applies custom audio,
  * and populates the reactive store for product panel binding.
  *
@@ -39,12 +40,28 @@ async function loadInstrument(
 export async function setupInstrumentPipeline(): Promise<void> {
   const urlParams = new URLSearchParams(window.location.search);
   const instrumentId = urlParams.get("instrument");
+  const storeId = urlParams.get("store");
   const source = parseInstrumentSource(urlParams.get("source"));
 
   instrumentStore.setSource(source);
+  instrumentStore.setStoreId(storeId);
   console.log(
-    `[pipeline] source=${source}${instrumentId ? `, instrument=${instrumentId}` : ", latest"}`,
+    `[pipeline] source=${source}${storeId ? `, store=${storeId}` : ""}${instrumentId ? `, instrument=${instrumentId}` : ", latest"}`,
   );
+
+  if (storeId) {
+    const catalog = await fetchStoreCatalog(storeId, source);
+    instrumentStore.setCatalog(catalog);
+    if (catalog) {
+      console.log(
+        `[pipeline] store catalog (${source}): ${catalog.instrument_ids.length} instrument(s)`,
+      );
+    } else {
+      console.log(`[pipeline] no store catalog found (${source}) for ${storeId}`);
+    }
+  } else {
+    instrumentStore.setCatalog(null);
+  }
 
   const instrument = await loadInstrument(instrumentId, source);
 

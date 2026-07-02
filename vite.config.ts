@@ -1,8 +1,49 @@
 import { iwsdkDev } from "@iwsdk/vite-plugin-dev";
 
 import { compileUIKit } from "@iwsdk/vite-plugin-uikitml";
-import { defineConfig } from "vite";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { defineConfig, type Plugin } from "vite";
 import mkcert from "vite-plugin-mkcert";
+
+const rootDir = fileURLToPath(new URL(".", import.meta.url));
+const panflowDataDir = path.resolve(rootDir, "../panflow-data");
+
+/** Serve ../panflow-data at /panflow-data during local dev. */
+function panflowDataPlugin(): Plugin {
+  return {
+    name: "panflow-data-static",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url ?? "";
+        if (!url.startsWith("/panflow-data/")) return next();
+
+        const relativePath = decodeURIComponent(url.slice("/panflow-data/".length));
+        const filePath = path.normalize(path.join(panflowDataDir, relativePath));
+        if (!filePath.startsWith(panflowDataDir)) {
+          res.statusCode = 403;
+          res.end("Forbidden");
+          return;
+        }
+
+        if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+          return next();
+        }
+
+        if (filePath.endsWith(".json")) {
+          res.setHeader("Content-Type", "application/json");
+        } else if (filePath.endsWith(".glb")) {
+          res.setHeader("Content-Type", "model/gltf-binary");
+        } else if (filePath.endsWith(".mp3")) {
+          res.setHeader("Content-Type", "audio/mpeg");
+        }
+
+        fs.createReadStream(filePath).pipe(res);
+      });
+    },
+  };
+}
 
 // Run `npm run dev:quest` for a clean server (no IWER injection) that you can
 // open on the Quest browser directly for real immersive-AR testing.
@@ -14,6 +55,7 @@ export default defineConfig(({ mode }) => {
   return {
   plugins: [
     mkcert(),
+    panflowDataPlugin(),
     ...(useEmulator ? [iwsdkDev({
       emulator: {
         device: "metaQuest3",
@@ -29,6 +71,9 @@ export default defineConfig(({ mode }) => {
     host: "0.0.0.0",
     port: isQuest ? 8082 : 8081,
     open: !isQuest,
+    fs: {
+      allow: [rootDir, panflowDataDir],
+    },
   },
   build: {
     outDir: "dist",

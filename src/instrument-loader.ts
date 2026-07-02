@@ -9,6 +9,19 @@ export const LOCAL_DATA_BASE = "/panflow-data";
 
 export type InstrumentSource = "supabase" | "local";
 
+export interface StoreCatalog {
+  store_id: string;
+  name?: string;
+  instrument_ids: string[];
+}
+
+/** On-disk catalog at panflow-data/stores/<id>/catalog.json */
+export interface LocalStoreCatalog {
+  id: string;
+  name?: string;
+  instruments: string[];
+}
+
 export interface CustomInstrument {
   id: string;
   name: string;
@@ -236,4 +249,125 @@ export async function fetchInstrumentById(id: string): Promise<CustomInstrument 
     console.warn(`[instrument-loader] supabase fetch error for ${id}:`, error);
     return null;
   }
+}
+
+function normalizeLocalStoreCatalog(
+  storeId: string,
+  catalog: LocalStoreCatalog,
+): StoreCatalog | null {
+  if (!catalog.id || catalog.id !== storeId) {
+    console.warn(
+      `[instrument-loader] local store catalog id mismatch: expected ${storeId}, got ${catalog.id ?? "(missing)"}`,
+    );
+    return null;
+  }
+
+  const instrumentIds = catalog.instruments ?? [];
+  return {
+    store_id: storeId,
+    name: catalog.name,
+    instrument_ids: instrumentIds,
+  };
+}
+
+async function fetchLocalStoreCatalogRaw(
+  storeId: string,
+): Promise<LocalStoreCatalog | null> {
+  const catalogUrl = `${LOCAL_DATA_BASE}/stores/${storeId}/catalog.json`;
+
+  try {
+    const response = await fetch(catalogUrl);
+    if (response.status === 404) {
+      console.warn(`[instrument-loader] no local store catalog for ${storeId}`);
+      return null;
+    }
+    if (!response.ok) {
+      console.warn(
+        `[instrument-loader] local store catalog fetch failed (${response.status}) for ${storeId}`,
+      );
+      return null;
+    }
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("json")) {
+      console.warn(
+        `[instrument-loader] local store catalog for ${storeId} is not JSON (${contentType})`,
+      );
+      return null;
+    }
+
+    return (await response.json()) as LocalStoreCatalog;
+  } catch (error) {
+    console.warn(
+      `[instrument-loader] local store catalog fetch error for ${storeId}:`,
+      error,
+    );
+    return null;
+  }
+}
+
+/** Returns a store catalog from panflow-data, or null if missing/invalid. */
+export async function fetchLocalStoreCatalog(
+  storeId: string,
+): Promise<StoreCatalog | null> {
+  const catalog = await fetchLocalStoreCatalogRaw(storeId);
+  if (!catalog) return null;
+  return normalizeLocalStoreCatalog(storeId, catalog);
+}
+
+type SupabaseStoreRow = {
+  id: string;
+  name?: string;
+  instrument_ids?: string[];
+};
+
+/** Returns a store catalog from Supabase, or null if missing/invalid. */
+export async function fetchSupabaseStoreCatalog(
+  storeId: string,
+): Promise<StoreCatalog | null> {
+  try {
+    const { data, error } = await sb
+      .from("stores")
+      .select("id, name, instrument_ids")
+      .eq("id", storeId)
+      .maybeSingle();
+
+    if (error) {
+      if (isMissingColumnError(error.message) || error.message?.includes("stores")) {
+        console.warn(
+          `[instrument-loader] supabase stores table unavailable for ${storeId}`,
+        );
+        return null;
+      }
+      console.warn(
+        `[instrument-loader] supabase store catalog fetch failed for ${storeId}:`,
+        error.message,
+      );
+      return null;
+    }
+
+    if (!data) return null;
+
+    const row = data as SupabaseStoreRow;
+    return {
+      store_id: row.id,
+      name: row.name,
+      instrument_ids: row.instrument_ids ?? [],
+    };
+  } catch (error) {
+    console.warn(
+      `[instrument-loader] supabase store catalog fetch error for ${storeId}:`,
+      error,
+    );
+    return null;
+  }
+}
+
+/** Returns instrument IDs for a store from the selected data source. */
+export async function fetchStoreCatalog(
+  storeId: string,
+  source: InstrumentSource,
+): Promise<StoreCatalog | null> {
+  if (source === "local") return fetchLocalStoreCatalog(storeId);
+  return fetchSupabaseStoreCatalog(storeId);
 }
