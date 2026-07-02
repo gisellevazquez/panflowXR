@@ -101,4 +101,10 @@
     <span class="dock-lbl">Song</span>
   </button>
 
+  <!-- ── Lock / Unlock handpan ────────────────────────────── -->
+  <button class="dock-btn" id="launcher-lock">
+    <img class="dock-icon-img" src="./icons/fluent_lock.svg" />
+    <span class="dock-lbl" id="launcher-lock-lbl">Lock</span>
+  </button>
+
 </div>

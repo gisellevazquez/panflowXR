@@ -14,6 +14,7 @@ import { Handpan } from "./handpan.js";
 import { productInfoManager } from "./product-info.js";
 import { melodyManager } from "./melody.js";
 import { tutorialManager } from "./tutorial-system.js";
+import { handpanPlacementManager } from "./handpan-placement.js";
 
 // Launcher sits this many metres below the handpan centre
 const LAUNCHER_Y_BELOW = 0.48;
@@ -31,6 +32,8 @@ export class LauncherSystem extends createSystem({
   private launcherRevealed = false;
   private tutorialUiLocked = true;
   private tutorialShowLauncher = false;
+  private lockLbl: any = null;
+  private lockBtn: any = null;
 
   // Pre-allocated scratch vectors — never allocate in update()
   private _hpPos!:   Vector3;
@@ -48,7 +51,7 @@ export class LauncherSystem extends createSystem({
     this.panelEntity.addComponent(PanelUI, {
       config:    "./ui/launcher.json",
       maxWidth:  0.50,
-      maxHeight: 0.20,
+      maxHeight: 0.25,
     });
 
     // Add interactables once XR is active
@@ -205,6 +208,33 @@ export class LauncherSystem extends createSystem({
       if (tutorialManager.active) return;
       melodyManager.mode = "guided";
       melodyManager.playing = true;
+    });
+
+    // ── Lock button ──────────────────────────────────────────
+    this.lockLbl = doc.getElementById("launcher-lock-lbl") as any;
+    this.lockBtn = doc.getElementById("launcher-lock") as any;
+
+    doc.getElementById("launcher-lock")?.addEventListener("click", () => {
+      handpanPlacementManager.toggle();
+      this._syncLockButton();
+    });
+
+    this._syncLockButton();
+
+    const onLockChanged = () => { this._syncLockButton(); };
+    window.addEventListener("panflow-handpan-lock-changed", onLockChanged);
+    this.cleanupFuncs.push(() => {
+      window.removeEventListener("panflow-handpan-lock-changed", onLockChanged);
+    });
+  }
+
+  // ── Private (continued) ────────────────────────────────────
+
+  private _syncLockButton(): void {
+    const locked = handpanPlacementManager.locked;
+    this.lockLbl?.setProperties({ text: locked ? "Unlock" : "Lock" });
+    this.lockBtn?.setProperties({
+      borderColor: locked ? 0x9e87ce : 0x2d2a35,
     });
   }
 }
