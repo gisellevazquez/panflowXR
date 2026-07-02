@@ -11,9 +11,9 @@ import {
   Object3D,
 } from "@iwsdk/core";
 
-import { Handpan, HandpanSystem, setCustomAudioUrls } from "./handpan.js";
+import { Handpan, HandpanSystem } from "./handpan.js";
 import { handpanPlacementManager } from "./handpan-placement.js";
-import { fetchLatestInstrument } from "./instrument-loader.js";
+import { setupInstrumentPipeline } from "./setup/instrument-pipeline.js";
 // import { BubbleSystem }           from "./bubbles.js"; // DISABLED
 import { reverbManager }          from "./reverb.js";
 import { ambientManager }         from "./ambient.js";
@@ -22,37 +22,40 @@ import { registerPlaySystems }    from "./setup/play-systems.js";
 import { recordingManager }       from "./recording-system.js";
 import { VREnvironmentSystem }    from "./vr-environment.js";
 
+/** Resolve public/ asset paths against the page URL (works in dev + GitHub Pages). */
+const pub = (path: string) => new URL(path.replace(/^\//, ""), document.baseURI).href;
+
 const assets: AssetManifest = {
-  handpan: { url: "./gltf/handpan/hand_pan.glb", type: AssetType.GLTF, priority: "critical" },
+  handpan: { url: pub("gltf/handpan/hand_pan.glb"), type: AssetType.GLTF, priority: "critical" },
 
   // ── Handpan tone fields (9 zones, 0–8) ────────────────────────────────────
-  hp_0: { url: "./audio/handpan/0.mp3", type: AssetType.Audio, priority: "background" },
-  hp_1: { url: "./audio/handpan/1.mp3", type: AssetType.Audio, priority: "background" },
-  hp_2: { url: "./audio/handpan/2.mp3", type: AssetType.Audio, priority: "background" },
-  hp_3: { url: "./audio/handpan/3.mp3", type: AssetType.Audio, priority: "background" },
-  hp_4: { url: "./audio/handpan/4.mp3", type: AssetType.Audio, priority: "background" },
-  hp_5: { url: "./audio/handpan/5.mp3", type: AssetType.Audio, priority: "background" },
-  hp_6: { url: "./audio/handpan/6.mp3", type: AssetType.Audio, priority: "background" },
-  hp_7: { url: "./audio/handpan/7.mp3", type: AssetType.Audio, priority: "background" },
-  hp_8: { url: "./audio/handpan/8.mp3", type: AssetType.Audio, priority: "background" },
+  hp_0: { url: pub("audio/handpan/0.mp3"), type: AssetType.Audio, priority: "background" },
+  hp_1: { url: pub("audio/handpan/1.mp3"), type: AssetType.Audio, priority: "background" },
+  hp_2: { url: pub("audio/handpan/2.mp3"), type: AssetType.Audio, priority: "background" },
+  hp_3: { url: pub("audio/handpan/3.mp3"), type: AssetType.Audio, priority: "background" },
+  hp_4: { url: pub("audio/handpan/4.mp3"), type: AssetType.Audio, priority: "background" },
+  hp_5: { url: pub("audio/handpan/5.mp3"), type: AssetType.Audio, priority: "background" },
+  hp_6: { url: pub("audio/handpan/6.mp3"), type: AssetType.Audio, priority: "background" },
+  hp_7: { url: pub("audio/handpan/7.mp3"), type: AssetType.Audio, priority: "background" },
+  hp_8: { url: pub("audio/handpan/8.mp3"), type: AssetType.Audio, priority: "background" },
 
   // ── Bubble pop sounds — 16 singing-bowl recordings (BG = big, SM = small) ──
-  bowl_00: { url: "./audio/bubbles/Kasper - Singing Bowls - 04 Bowl 1 Articulation 1 Microphone 1 BG.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_01: { url: "./audio/bubbles/Kasper - Singing Bowls - 06 Bowl 1 Articulation 2 Microphone 1 BG.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_02: { url: "./audio/bubbles/Kasper - Singing Bowls - 08 Bowl 1 Articulation 3 Microphone 1 SM.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_03: { url: "./audio/bubbles/Kasper - Singing Bowls - 10 Bowl 1 Articulation 4 Microphone 1 BG.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_04: { url: "./audio/bubbles/Kasper - Singing Bowls - 12 Bowl 2 Articulation 1 Microphone 1 SM.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_05: { url: "./audio/bubbles/Kasper - Singing Bowls - 14 Bowl 2 Articulation 2 Microphone 1 SM.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_06: { url: "./audio/bubbles/Kasper - Singing Bowls - 16 Bowl 2 Articulation 3 Microphone 1 SM.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_07: { url: "./audio/bubbles/Kasper - Singing Bowls - 18 Bowl 2 Articulation 4 Microphone 1 SM.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_08: { url: "./audio/bubbles/Kasper - Singing Bowls - 20 Bowl 3 Articulation 1 Microphone 1 SM.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_09: { url: "./audio/bubbles/Kasper - Singing Bowls - 22 Bowl 3 Articulation 2 Microphone 1 SM.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_10: { url: "./audio/bubbles/Kasper - Singing Bowls - 24 Bowl 3 Articulation 3 Microphone 1 SM.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_11: { url: "./audio/bubbles/Kasper - Singing Bowls - 26 Bowl 3 Articulation 4 Microphone 1 sm.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_12: { url: "./audio/bubbles/Kasper - Singing Bowls - 28 Bowl 4 Articulation 1 Microphone 1 BG.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_13: { url: "./audio/bubbles/Kasper - Singing Bowls - 30 Bowl 4 Articulation 2 Microphone 1 BG.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_14: { url: "./audio/bubbles/Kasper - Singing Bowls - 32 Bowl 4 Articulation 3 Microphone 1 SM.mp3", type: AssetType.Audio, priority: "background" },
-  bowl_15: { url: "./audio/bubbles/Kasper - Singing Bowls - 34 Bowl 4 Articulation 4 Microphone 1 BG.mp3", type: AssetType.Audio, priority: "background" },
+  bowl_00: { url: pub("audio/bubbles/Kasper - Singing Bowls - 04 Bowl 1 Articulation 1 Microphone 1 BG.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_01: { url: pub("audio/bubbles/Kasper - Singing Bowls - 06 Bowl 1 Articulation 2 Microphone 1 BG.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_02: { url: pub("audio/bubbles/Kasper - Singing Bowls - 08 Bowl 1 Articulation 3 Microphone 1 SM.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_03: { url: pub("audio/bubbles/Kasper - Singing Bowls - 10 Bowl 1 Articulation 4 Microphone 1 BG.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_04: { url: pub("audio/bubbles/Kasper - Singing Bowls - 12 Bowl 2 Articulation 1 Microphone 1 SM.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_05: { url: pub("audio/bubbles/Kasper - Singing Bowls - 14 Bowl 2 Articulation 2 Microphone 1 SM.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_06: { url: pub("audio/bubbles/Kasper - Singing Bowls - 16 Bowl 2 Articulation 3 Microphone 1 SM.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_07: { url: pub("audio/bubbles/Kasper - Singing Bowls - 18 Bowl 2 Articulation 4 Microphone 1 SM.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_08: { url: pub("audio/bubbles/Kasper - Singing Bowls - 20 Bowl 3 Articulation 1 Microphone 1 SM.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_09: { url: pub("audio/bubbles/Kasper - Singing Bowls - 22 Bowl 3 Articulation 2 Microphone 1 SM.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_10: { url: pub("audio/bubbles/Kasper - Singing Bowls - 24 Bowl 3 Articulation 3 Microphone 1 SM.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_11: { url: pub("audio/bubbles/Kasper - Singing Bowls - 26 Bowl 3 Articulation 4 Microphone 1 sm.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_12: { url: pub("audio/bubbles/Kasper - Singing Bowls - 28 Bowl 4 Articulation 1 Microphone 1 BG.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_13: { url: pub("audio/bubbles/Kasper - Singing Bowls - 30 Bowl 4 Articulation 2 Microphone 1 BG.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_14: { url: pub("audio/bubbles/Kasper - Singing Bowls - 32 Bowl 4 Articulation 3 Microphone 1 SM.mp3"), type: AssetType.Audio, priority: "background" },
+  bowl_15: { url: pub("audio/bubbles/Kasper - Singing Bowls - 34 Bowl 4 Articulation 4 Microphone 1 BG.mp3"), type: AssetType.Audio, priority: "background" },
 };
 
 // Read XR mode from URL query param or localStorage (default: AR)
@@ -62,7 +65,7 @@ const isVrMode = xrMode === "vr";
 localStorage.setItem("xr-mode", xrMode);
 
 // Fetch custom instrument in background — does not block world creation
-const instrumentPromise = fetchLatestInstrument();
+setupInstrumentPipeline();
 
 World.create(document.getElementById("scene-container") as HTMLDivElement, {
   assets,
@@ -141,13 +144,6 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   document.addEventListener("handpan-note", (e: Event) => {
     const { index } = (e as CustomEvent).detail;
     console.log(`Handpan zone ${index} triggered`);
-  });
-
-  // Apply custom audio URLs once instrument fetch resolves
-  instrumentPromise.then((instrument) => {
-    if (instrument?.audio_urls) {
-      setCustomAudioUrls(instrument.audio_urls);
-    }
   });
 
   // ── Systems ───────────────────────────────────────────────────────────────
