@@ -2,8 +2,10 @@ import {
   createComponent,
   createSystem,
   Vector3,
+  Euler,
   Entity,
   OneHandGrabbable,
+  Object3D,
 } from "@iwsdk/core";
 
 import { reverbManager } from "./reverb.js";
@@ -35,7 +37,7 @@ const NOTE_SRCS = [
 ];
 
 // Per-zone trigger radius in metres — zone 0 (Dong) gets a larger target
-const ZONE_RADII: number[] = [
+export const ZONE_RADII: number[] = [
   0.18, // 0 Ding — larger
   0.15, // 1
   0.15, // 2
@@ -46,8 +48,55 @@ const ZONE_RADII: number[] = [
   0.11, // 7
   0.09, // 8
 ];
+
+/** Zone 0 (Ding) uses a sphere collider; outer zones use tilted discs. */
+export const DING_ZONE_INDEX = 0;
+
+/** Per-zone disc tilt (radians) — rotation around handpan local X/Y/Z from surface-up. Ignored for Ding. */
+export const ZONE_TILTS: [number, number, number][] = [
+  [0, 0, 0], // 0 Ding — sphere, tilt unused
+  [0, 0, 0], // 1
+  [0, 0, 0], // 2
+  [0, 0, 0], // 3
+  [0, 0, 0], // 4
+  [0, 0, 0], // 5
+  [0, 0, 0], // 6
+  [0, 0, 0], // 7
+  [0, 0, 0], // 8
+];
+
+/** Apply editor tilt triplet to a disc collider/mesh rotation in handpan local space. */
+export function applyZoneDiscTilt(
+  target: { rotation: { x: number; y: number; z: number } },
+  tilt: [number, number, number],
+): void {
+  target.rotation.x = -Math.PI / 2 + tilt[0];
+  target.rotation.y = tilt[1];
+  target.rotation.z = tilt[2];
+}
+
+/** World-space disc normal from tilt triplet (matches editor preview + debug discs). */
+export function getZoneDiscWorldNormal(
+  tilt: [number, number, number],
+  handpanMesh: Object3D,
+  out: Vector3,
+  euler: Euler,
+  localNormal: Vector3,
+): void {
+  localNormal.set(0, 0, 1);
+  euler.set(-Math.PI / 2 + tilt[0], tilt[1], tilt[2]);
+  localNormal.applyEuler(euler);
+  out.copy(localNormal);
+  out.transformDirection(handpanMesh.matrixWorld);
+}
 const COOLDOWN_MS = 150;   // minimum ms between re-triggers of the same zone — allows rapid tapping
 const DISC_DEPTH_THRESHOLD = 0.08; // max perpendicular distance from disc plane (metres)
+
+// Strike dynamics — center hits are louder and brighter than edge hits
+const STRIKE_VOL_CENTER = 0.9;
+const STRIKE_VOL_EDGE   = 0.55;
+const STRIKE_RATE_CENTER = 1.0;  // full playback rate at center
+const STRIKE_RATE_EDGE   = 0.92; // slightly duller at edge
 
 /** Per-hand hit probe source — fingertip preferred, then ray tip, then grip. */
 type HitSource = "fingertip" | "ray" | "grip" | "none";
@@ -77,7 +126,9 @@ export class HandpanSystem extends createSystem({
 }) {
   // Pre-allocated work vectors — zero allocations in update()
   private zoneWorldPos: Vector3[] = Array.from({ length: ZONE_OFFSETS.length }, () => new Vector3());
-  private zoneNormal = new Vector3(); // handpan world-space up direction
+  private zoneNormal = new Vector3();
+  private discEuler = new Euler();
+  private discNormalLocal = new Vector3();
   private tipLeft  = new Vector3();
   private tipRight = new Vector3();
 
@@ -132,6 +183,57 @@ export class HandpanSystem extends createSystem({
     console.log(`[play-feel] hit input — left: ${left}, right: ${right}`);
   }
 
+  /** Map strike distance from zone center (0 = center, 1 = edge) to volume + playback rate. */
+  private strikeDynamics(strikeDistSq: number, radius: number): { volume: number; playbackRate: number } {
+    const t = Math.min(1, Math.sqrt(strikeDistSq) / radius);
+    const centerWeight = 1 - t;
+    return {
+      volume: STRIKE_VOL_EDGE + (STRIKE_VOL_CENTER - STRIKE_VOL_EDGE) * centerWeight,
+      playbackRate: STRIKE_RATE_EDGE + (STRIKE_RATE_CENTER - STRIKE_RATE_EDGE) * centerWeight,
+    };
+  }
+
+  /** Sphere hit for Ding — 3D distance from zone center. */
+  private testSphereHit(
+    tipX: number, tipY: number, tipZ: number,
+    cx: number, cy: number, cz: number,
+    radiusSq: number,
+  ): { hit: boolean; strikeDistSq: number } {
+    const dx = tipX - cx;
+    const dy = tipY - cy;
+    const dz = tipZ - cz;
+    const distSq = dx * dx + dy * dy + dz * dz;
+    return { hit: distSq <= radiusSq, strikeDistSq: distSq };
+  }
+
+  /** Tilted disc hit — fingertip projected onto zone plane must fall within radius. */
+  private testDiscHit(
+    tipX: number, tipY: number, tipZ: number,
+    cx: number, cy: number, cz: number,
+    nx: number, ny: number, nz: number,
+    radiusSq: number,
+  ): { hit: boolean; strikeDistSq: number } {
+    const dx = tipX - cx;
+    const dy = tipY - cy;
+    const dz = tipZ - cz;
+    const distSq = dx * dx + dy * dy + dz * dz;
+    const depth = dx * nx + dy * ny + dz * nz;
+    const inPlaneSq = Math.max(0, distSq - depth * depth);
+    return {
+      hit: Math.abs(depth) <= DISC_DEPTH_THRESHOLD && inPlaneSq <= radiusSq,
+      strikeDistSq: inPlaneSq,
+    };
+  }
+
+  /** Disc normal from [tiltX, tiltY, tiltZ] — same euler as editor preview discs. */
+  private zoneDiscNormal(
+    tilt: [number, number, number],
+    handpanMesh: Object3D,
+    out: Vector3,
+  ): void {
+    getZoneDiscWorldNormal(tilt, handpanMesh, out, this.discEuler, this.discNormalLocal);
+  }
+
   update(_delta: number, _time: number) {
     // Lazy-load buffers once the reverb AudioContext is ready (after sessionstart)
     if (!this.loadingStarted && reverbManager.audioContext) {
@@ -158,35 +260,37 @@ export class HandpanSystem extends createSystem({
         mesh.localToWorld(this.zoneWorldPos[i]);
       }
 
-      // Handpan world-space up direction (local Y axis after rotation)
-      const m = mesh.matrixWorld.elements;
-      this.zoneNormal.set(m[4], m[5], m[6]).normalize();
-      const nx = this.zoneNormal.x;
-      const ny = this.zoneNormal.y;
-      const nz = this.zoneNormal.z;
-
       for (let i = 0; i < ZONE_OFFSETS.length; i++) {
         const zp = this.zoneWorldPos[i];
         const radius = ZONE_RADII[i] ?? 0.15;
         const radiusSq = radius * radius;
+        const isDing = i === DING_ZONE_INDEX;
+        const tilt = ZONE_TILTS[i] ?? [0, 0, 0];
 
-        // Oriented-disc hit test for left fingertip
-        const dxL = this.tipLeft.x - zp.x;
-        const dyL = this.tipLeft.y - zp.y;
-        const dzL = this.tipLeft.z - zp.z;
-        const distSqL = dxL * dxL + dyL * dyL + dzL * dzL;
-        const depthL = dxL * nx + dyL * ny + dzL * nz;
-        const inPlaneSqL = Math.max(0, distSqL - depthL * depthL);
-        const leftHit = leftActive && Math.abs(depthL) <= DISC_DEPTH_THRESHOLD && inPlaneSqL <= radiusSq;
+        let leftHit = false;
+        let rightHit = false;
+        let strikeSqL = radiusSq;
+        let strikeSqR = radiusSq;
 
-        // Oriented-disc hit test for right fingertip
-        const dxR = this.tipRight.x - zp.x;
-        const dyR = this.tipRight.y - zp.y;
-        const dzR = this.tipRight.z - zp.z;
-        const distSqR = dxR * dxR + dyR * dyR + dzR * dzR;
-        const depthR = dxR * nx + dyR * ny + dzR * nz;
-        const inPlaneSqR = Math.max(0, distSqR - depthR * depthR);
-        const rightHit = rightActive && Math.abs(depthR) <= DISC_DEPTH_THRESHOLD && inPlaneSqR <= radiusSq;
+        if (isDing) {
+          const l = this.testSphereHit(this.tipLeft.x, this.tipLeft.y, this.tipLeft.z, zp.x, zp.y, zp.z, radiusSq);
+          const r = this.testSphereHit(this.tipRight.x, this.tipRight.y, this.tipRight.z, zp.x, zp.y, zp.z, radiusSq);
+          leftHit = leftActive && l.hit;
+          rightHit = rightActive && r.hit;
+          strikeSqL = l.strikeDistSq;
+          strikeSqR = r.strikeDistSq;
+        } else {
+          this.zoneDiscNormal(tilt, mesh, this.zoneNormal);
+          const nx = this.zoneNormal.x;
+          const ny = this.zoneNormal.y;
+          const nz = this.zoneNormal.z;
+          const l = this.testDiscHit(this.tipLeft.x, this.tipLeft.y, this.tipLeft.z, zp.x, zp.y, zp.z, nx, ny, nz, radiusSq);
+          const r = this.testDiscHit(this.tipRight.x, this.tipRight.y, this.tipRight.z, zp.x, zp.y, zp.z, nx, ny, nz, radiusSq);
+          leftHit = leftActive && l.hit;
+          rightHit = rightActive && r.hit;
+          strikeSqL = l.strikeDistSq;
+          strikeSqR = r.strikeDistSq;
+        }
 
         const inRange = leftHit || rightHit;
 
@@ -195,7 +299,11 @@ export class HandpanSystem extends createSystem({
           this.lastPlayed[i] = now;
           const buf = this.noteBuffers[i];
           if (buf) {
-            reverbManager.playOneShot(buf, 0.8);
+            let strikeSq = radiusSq;
+            if (leftHit)  strikeSq = strikeSqL;
+            if (rightHit) strikeSq = Math.min(strikeSq, strikeSqR);
+            const { volume, playbackRate } = this.strikeDynamics(strikeSq, radius);
+            reverbManager.playOneShot(buf, volume, playbackRate);
           }
           document.dispatchEvent(
             new CustomEvent("handpan-note", { detail: { index: i } }),
