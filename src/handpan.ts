@@ -3,8 +3,6 @@ import {
   createSystem,
   Vector3,
   Euler,
-  Entity,
-  OneHandGrabbable,
   Object3D,
 } from "@iwsdk/core";
 
@@ -324,19 +322,3 @@ export class HandpanSystem extends createSystem({
     });
   }
 }
-
-/**
- * Shared singleton for toggling handpan grab lock.
- */
-export const handpanLockManager = {
-  entity: null as Entity | null,
-  locked: false,
-
-  toggle(): boolean {
-    if (!this.entity) return this.locked;
-    this.locked = !this.locked;
-    this.entity.setValue(OneHandGrabbable, "translate", !this.locked);
-    this.entity.setValue(OneHandGrabbable, "rotate",    !this.locked);
-    return this.locked;
-  },
-};

@@ -11,12 +11,14 @@ import {
   Object3D,
 } from "@iwsdk/core";
 
-import { Handpan, HandpanSystem, handpanLockManager, setCustomAudioUrls } from "./handpan.js";
+import { Handpan, HandpanSystem, setCustomAudioUrls } from "./handpan.js";
+import { handpanPlacementManager } from "./handpan-placement.js";
 import { fetchLatestInstrument } from "./instrument-loader.js";
 // import { BubbleSystem }           from "./bubbles.js"; // DISABLED
 import { reverbManager }          from "./reverb.js";
 import { ambientManager }         from "./ambient.js";
 import { registerUxSystems }      from "./setup/ux-systems.js";
+import { registerPlaySystems }    from "./setup/play-systems.js";
 import { recordingManager }       from "./recording-system.js";
 import { VREnvironmentSystem }    from "./vr-environment.js";
 
@@ -129,7 +131,12 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
     .addComponent(Handpan)
     .addComponent(OneHandGrabbable, { rotate: true, translate: true });
 
-  handpanLockManager.entity = handpanEntity;
+  handpanPlacementManager.entity      = handpanEntity;
+  handpanPlacementManager.sceneParent = world.sceneEntity;
+  handpanPlacementManager.isArMode     = !isVrMode;
+
+  (window as any).__placeAndLockHandpan = () => handpanPlacementManager.lock();
+  (window as any).__unlockHandpan       = () => handpanPlacementManager.unlock();
 
   document.addEventListener("handpan-note", (e: Event) => {
     const { index } = (e as CustomEvent).detail;
@@ -146,6 +153,7 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   // ── Systems ───────────────────────────────────────────────────────────────
   world.registerSystem(HandpanSystem);
   // world.registerSystem(BubbleSystem); // DISABLED
+  registerPlaySystems(world);
   registerUxSystems(world);
 
   if (isVrMode) {
