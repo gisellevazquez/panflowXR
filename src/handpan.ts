@@ -49,6 +49,9 @@ const ZONE_RADII: number[] = [
 const COOLDOWN_MS = 150;   // minimum ms between re-triggers of the same zone — allows rapid tapping
 const DISC_DEPTH_THRESHOLD = 0.08; // max perpendicular distance from disc plane (metres)
 
+/** Per-hand hit probe source — fingertip preferred, then ray tip, then grip. */
+type HitSource = "fingertip" | "ray" | "grip" | "none";
+
 // Overridden at runtime when a store owner has uploaded a custom instrument
 let _customAudioUrls: (string | null)[] = [];
 export function setCustomAudioUrls(urls: (string | null)[]): void {
@@ -85,8 +88,48 @@ export class HandpanSystem extends createSystem({
   private noteBuffers: (AudioBuffer | null)[] = new Array(NOTE_SRCS.length).fill(null);
   private loadingStarted = false;
 
+  private hitSourceLeft: HitSource = "none";
+  private hitSourceRight: HitSource = "none";
+
   init() {
     // No IWSDK AudioSource entities needed — notes play via reverbManager.playOneShot()
+  }
+
+  /**
+   * Resolve per-hand hit probe position with explicit priority:
+   * 1. Hand tracking → indexTipSpaces (IWSDK joint fingertip)
+   * 2. Controller → indexTipSpaces (IWSDK copies raySpaces pointer tip)
+   * 3. Last resort → gripSpaces origin
+   */
+  private resolveHitSource(handedness: "left" | "right", out: Vector3): HitSource {
+    const tipSpace = this.player.indexTipSpaces[handedness];
+
+    if (this.input.isPrimary("hand", handedness)) {
+      tipSpace.getWorldPosition(out);
+      return "fingertip";
+    }
+
+    if (this.input.isPrimary("controller", handedness)) {
+      tipSpace.getWorldPosition(out);
+      return "ray";
+    }
+
+    const grip = this.player.gripSpaces[handedness];
+    if (grip) {
+      grip.getWorldPosition(out);
+      return "grip";
+    }
+
+    return "none";
+  }
+
+  private logHitSourceIfChanged(left: HitSource, right: HitSource): void {
+    if (left === this.hitSourceLeft && right === this.hitSourceRight) return;
+    if (left === "none" && right === "none") return;
+
+    this.hitSourceLeft = left;
+    this.hitSourceRight = right;
+    console.log(`[play-feel] hit input — left: ${left}, right: ${right}`);
   }
 
   update(_delta: number, _time: number) {
@@ -96,12 +139,12 @@ export class HandpanSystem extends createSystem({
       this._loadBuffers();
     }
 
-    // Hand tracking: use index fingertips. Controller fallback: use grip origin.
-    const tips = this.player.indexTipSpaces as typeof this.player.indexTipSpaces | undefined;
-    if (tips?.left)  tips.left.getWorldPosition(this.tipLeft);
-    else             this.player.gripSpaces?.left?.getWorldPosition(this.tipLeft);
-    if (tips?.right) tips.right.getWorldPosition(this.tipRight);
-    else             this.player.gripSpaces?.right?.getWorldPosition(this.tipRight);
+    // Hand tracking: indexTipSpaces fingertip. Controller: indexTipSpaces ray tip. Else grip.
+    const leftSource = this.resolveHitSource("left", this.tipLeft);
+    const rightSource = this.resolveHitSource("right", this.tipRight);
+    this.logHitSourceIfChanged(leftSource, rightSource);
+    const leftActive = leftSource !== "none";
+    const rightActive = rightSource !== "none";
 
     const now = Date.now();
 
@@ -134,7 +177,7 @@ export class HandpanSystem extends createSystem({
         const distSqL = dxL * dxL + dyL * dyL + dzL * dzL;
         const depthL = dxL * nx + dyL * ny + dzL * nz;
         const inPlaneSqL = Math.max(0, distSqL - depthL * depthL);
-        const leftHit = Math.abs(depthL) <= DISC_DEPTH_THRESHOLD && inPlaneSqL <= radiusSq;
+        const leftHit = leftActive && Math.abs(depthL) <= DISC_DEPTH_THRESHOLD && inPlaneSqL <= radiusSq;
 
         // Oriented-disc hit test for right fingertip
         const dxR = this.tipRight.x - zp.x;
@@ -143,7 +186,7 @@ export class HandpanSystem extends createSystem({
         const distSqR = dxR * dxR + dyR * dyR + dzR * dzR;
         const depthR = dxR * nx + dyR * ny + dzR * nz;
         const inPlaneSqR = Math.max(0, distSqR - depthR * depthR);
-        const rightHit = Math.abs(depthR) <= DISC_DEPTH_THRESHOLD && inPlaneSqR <= radiusSq;
+        const rightHit = rightActive && Math.abs(depthR) <= DISC_DEPTH_THRESHOLD && inPlaneSqR <= radiusSq;
 
         const inRange = leftHit || rightHit;
 
