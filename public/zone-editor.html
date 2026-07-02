@@ -734,15 +734,23 @@ function placeZone(i, point) {
 }
 
 function clearZone(i) {
+  if (!zones[i].placed) { setStatus(`Zone ${i} is already empty`); return; }
   zones[i].position = null;
   zones[i].placed   = false;
   zoneMeshes[i].visible = false;
   btnEls[i].classList.remove('placed');
   updateInfoPanel();
   updateExport();
+  setStatus(`Zone ${i} cleared`);
 }
 
-function clearAll() { for (let i = 0; i < zoneCount; i++) clearZone(i); }
+function clearAll() {
+  let count = 0;
+  for (let i = 0; i < zoneCount; i++) {
+    if (zones[i].placed) { clearZone(i); count++; }
+  }
+  setStatus(count > 0 ? `${count} zone(s) cleared` : 'No zones to clear');
+}
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
 const fmt = v => (v >= 0 ? ' ' : '') + v.toFixed(3);
@@ -792,13 +800,21 @@ function updateExport() {
     return snd ? `  "${snd}",${tag}` : `  null,${tag} — no sound`;
   });
 
+  const noteLines = zones.map((_, i) => {
+    const n = zoneNotes[i];
+    const tag = i === 0 ? ' // 0 Ding' : ` // ${i}`;
+    return n ? `  "${n}",${tag}` : `  null,${tag} — no note`;
+  });
+
   const hasSounds = zoneSounds.some(s => s !== null);
+  const hasNotes  = zoneNotes.some(n => n !== null);
 
   const exportJson = {
     material: selectedMaterial,
     zone_count: zoneCount,
     zone_offsets: buildZoneOffsets(),
     zone_radii: buildZoneRadii(),
+    zone_notes: zoneNotes,
     model_scale: 1.0,
   };
 
@@ -812,6 +828,11 @@ function updateExport() {
       ? `\n// Zone → audio file mapping\n// Put these files in your project's audio folder\n` +
         `const ZONE_SOUNDS: (string | null)[] = [\n` +
         soundLines.join('\n') + '\n];\n'
+      : '') +
+    (hasNotes
+      ? `\n// Zone → musical note (\"C4\", \"F#3\", etc.)\n` +
+        `const ZONE_NOTES: (string | null)[] = [\n` +
+        noteLines.join('\n') + '\n];\n'
       : '');
 
   document.getElementById('export-code').value =
