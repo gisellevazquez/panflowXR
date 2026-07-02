@@ -17,6 +17,7 @@ import { tutorialManager } from "./tutorial-system.js";
 
 // Launcher sits this many metres below the handpan centre
 const LAUNCHER_Y_BELOW = 0.48;
+const LAUNCHER_Y_TUTORIAL = 0.65;
 
 export class LauncherSystem extends createSystem({
   handpans: { required: [Handpan] },
@@ -29,6 +30,7 @@ export class LauncherSystem extends createSystem({
   private highlightPhase = 0;
   private launcherRevealed = false;
   private tutorialUiLocked = true;
+  private tutorialShowLauncher = false;
 
   // Pre-allocated scratch vectors — never allocate in update()
   private _hpPos!:   Vector3;
@@ -45,8 +47,8 @@ export class LauncherSystem extends createSystem({
 
     this.panelEntity.addComponent(PanelUI, {
       config:    "./ui/launcher.json",
-      maxWidth:  0.15,
-      maxHeight: 0.58,
+      maxWidth:  0.50,
+      maxHeight: 0.20,
     });
 
     // Add interactables once XR is active
@@ -89,31 +91,41 @@ export class LauncherSystem extends createSystem({
 
     const onTutorialStarted = () => {
       this.tutorialUiLocked = true;
+      this.tutorialShowLauncher = false;
       this._setLauncherVisible(false);
     };
     const onTutorialEnded = () => {
       this.tutorialUiLocked = false;
+      this.tutorialShowLauncher = false;
       this._setLauncherVisible(true);
     };
     const onXrStarted = () => {
       this.tutorialUiLocked = true;
+      this.tutorialShowLauncher = false;
       this._setLauncherVisible(false);
+    };
+    const onTutorialShowLauncher = (e: Event) => {
+      const show = (e as CustomEvent<{ show: boolean }>).detail.show;
+      this.tutorialShowLauncher = show;
+      this._setLauncherVisible(show);
     };
 
     window.addEventListener("panflow-tutorial-started", onTutorialStarted);
     window.addEventListener("panflow-tutorial-ended", onTutorialEnded);
     window.addEventListener("panflow-xr-started", onXrStarted);
+    window.addEventListener("panflow-tutorial-show-launcher", onTutorialShowLauncher);
 
     this.cleanupFuncs.push(() => {
       window.removeEventListener("panflow-tutorial-highlight-launcher", onLauncherHighlight);
       window.removeEventListener("panflow-tutorial-started", onTutorialStarted);
       window.removeEventListener("panflow-tutorial-ended", onTutorialEnded);
       window.removeEventListener("panflow-xr-started", onXrStarted);
+      window.removeEventListener("panflow-tutorial-show-launcher", onTutorialShowLauncher);
     });
   }
 
   update(delta: number, _time: number) {
-    if (this.tutorialUiLocked || !this.launcherRevealed || !this.panelEntity?.object3D || !this.player.head) return;
+    if ((this.tutorialUiLocked && !this.tutorialShowLauncher) || !this.launcherRevealed || !this.panelEntity?.object3D || !this.player.head) return;
 
     // Track the handpan's current world position every frame
     this._hasHandpan = false;
@@ -126,7 +138,8 @@ export class LauncherSystem extends createSystem({
 
     // Stick to the bottom-centre of the handpan
     const obj = this.panelEntity.object3D;
-    obj.position.set(this._hpPos.x, this._hpPos.y - LAUNCHER_Y_BELOW, this._hpPos.z);
+    const yOffset = this.tutorialShowLauncher ? LAUNCHER_Y_TUTORIAL : LAUNCHER_Y_BELOW;
+    obj.position.set(this._hpPos.x, this._hpPos.y - yOffset, this._hpPos.z);
 
     // Always face the player (Y-axis lock keeps panel upright)
     this.player.head.getWorldPosition(this._headPos);
