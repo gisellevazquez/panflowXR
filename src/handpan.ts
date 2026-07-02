@@ -47,6 +47,7 @@ const ZONE_RADII: number[] = [
   0.09, // 8
 ];
 const COOLDOWN_MS = 150;   // minimum ms between re-triggers of the same zone — allows rapid tapping
+const DISC_DEPTH_THRESHOLD = 0.08; // max perpendicular distance from disc plane (metres)
 
 // Overridden at runtime when a store owner has uploaded a custom instrument
 let _customAudioUrls: (string | null)[] = [];
@@ -73,6 +74,7 @@ export class HandpanSystem extends createSystem({
 }) {
   // Pre-allocated work vectors — zero allocations in update()
   private zoneWorldPos: Vector3[] = Array.from({ length: ZONE_OFFSETS.length }, () => new Vector3());
+  private zoneNormal = new Vector3(); // handpan world-space up direction
   private tipLeft  = new Vector3();
   private tipRight = new Vector3();
 
@@ -113,12 +115,37 @@ export class HandpanSystem extends createSystem({
         mesh.localToWorld(this.zoneWorldPos[i]);
       }
 
+      // Handpan world-space up direction (local Y axis after rotation)
+      const m = mesh.matrixWorld.elements;
+      this.zoneNormal.set(m[4], m[5], m[6]).normalize();
+      const nx = this.zoneNormal.x;
+      const ny = this.zoneNormal.y;
+      const nz = this.zoneNormal.z;
+
       for (let i = 0; i < ZONE_OFFSETS.length; i++) {
         const zp = this.zoneWorldPos[i];
         const radius = ZONE_RADII[i] ?? 0.15;
-        const inRange =
-          this.tipLeft.distanceTo(zp)  < radius ||
-          this.tipRight.distanceTo(zp) < radius;
+        const radiusSq = radius * radius;
+
+        // Oriented-disc hit test for left fingertip
+        const dxL = this.tipLeft.x - zp.x;
+        const dyL = this.tipLeft.y - zp.y;
+        const dzL = this.tipLeft.z - zp.z;
+        const distSqL = dxL * dxL + dyL * dyL + dzL * dzL;
+        const depthL = dxL * nx + dyL * ny + dzL * nz;
+        const inPlaneSqL = Math.max(0, distSqL - depthL * depthL);
+        const leftHit = Math.abs(depthL) <= DISC_DEPTH_THRESHOLD && inPlaneSqL <= radiusSq;
+
+        // Oriented-disc hit test for right fingertip
+        const dxR = this.tipRight.x - zp.x;
+        const dyR = this.tipRight.y - zp.y;
+        const dzR = this.tipRight.z - zp.z;
+        const distSqR = dxR * dxR + dyR * dyR + dzR * dzR;
+        const depthR = dxR * nx + dyR * ny + dzR * nz;
+        const inPlaneSqR = Math.max(0, distSqR - depthR * depthR);
+        const rightHit = Math.abs(depthR) <= DISC_DEPTH_THRESHOLD && inPlaneSqR <= radiusSq;
+
+        const inRange = leftHit || rightHit;
 
         // Rising-edge trigger with cooldown
         if (inRange && !this.zoneActive[i] && now - this.lastPlayed[i] > COOLDOWN_MS) {
