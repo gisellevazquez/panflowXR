@@ -10,37 +10,59 @@ import mkcert from "vite-plugin-mkcert";
 const rootDir = fileURLToPath(new URL(".", import.meta.url));
 const panflowDataDir = path.resolve(rootDir, "../panflow-data");
 
-/** Serve ../panflow-data at /panflow-data during local dev. */
+/** Serve ../panflow-data at /panflow-data and product.html at /product(.html) during local dev. */
 function panflowDataPlugin(): Plugin {
   return {
     name: "panflow-data-static",
-    configureServer(server) {
-      server.middlewares.use((req, res, next) => {
-        const url = req.url ?? "";
-        if (!url.startsWith("/panflow-data/")) return next();
+    configureServer: {
+      order: "pre",
+      handler(server) {
+        server.middlewares.use((req, res, next) => {
+          const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
 
-        const relativePath = decodeURIComponent(url.slice("/panflow-data/".length));
-        const filePath = path.normalize(path.join(panflowDataDir, relativePath));
-        if (!filePath.startsWith(panflowDataDir)) {
-          res.statusCode = 403;
-          res.end("Forbidden");
-          return;
-        }
+          // Serve product.html as a standalone page BEFORE Vite's SPA fallback
+          if (url.pathname === "/product.html" || url.pathname === "/product") {
+            const filePath = path.join(rootDir, "product.html");
+            if (fs.existsSync(filePath)) {
+              res.setHeader("Content-Type", "text/html");
+              res.setHeader("Cache-Control", "no-cache");
+              const html = fs.readFileSync(filePath, "utf-8");
+              res.end(html);
+              return;
+            }
+          }
 
-        if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
-          return next();
-        }
+          // Serve panflow-data files
+          if (url.pathname.startsWith("/panflow-data/")) {
+            const relativePath = decodeURIComponent(
+              url.pathname.slice("/panflow-data/".length),
+            );
+            const filePath = path.normalize(
+              path.join(panflowDataDir, relativePath),
+            );
+            if (!filePath.startsWith(panflowDataDir)) {
+              res.statusCode = 403;
+              res.end("Forbidden");
+              return;
+            }
+            if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+              next();
+              return;
+            }
+            if (filePath.endsWith(".json")) {
+              res.setHeader("Content-Type", "application/json");
+            } else if (filePath.endsWith(".glb")) {
+              res.setHeader("Content-Type", "model/gltf-binary");
+            } else if (filePath.endsWith(".mp3")) {
+              res.setHeader("Content-Type", "audio/mpeg");
+            }
+            fs.createReadStream(filePath).pipe(res);
+            return;
+          }
 
-        if (filePath.endsWith(".json")) {
-          res.setHeader("Content-Type", "application/json");
-        } else if (filePath.endsWith(".glb")) {
-          res.setHeader("Content-Type", "model/gltf-binary");
-        } else if (filePath.endsWith(".mp3")) {
-          res.setHeader("Content-Type", "audio/mpeg");
-        }
-
-        fs.createReadStream(filePath).pipe(res);
-      });
+          next();
+        });
+      },
     },
   };
 }
@@ -79,7 +101,7 @@ export default defineConfig(({ mode }) => {
     outDir: "dist",
     sourcemap: process.env.NODE_ENV !== "production",
     target: "esnext",
-    rollupOptions: { input: "./index.html" },
+    rollupOptions: { input: { main: "./index.html", product: "./product.html" } },
   },
   esbuild: { target: "esnext" },
   optimizeDeps: {

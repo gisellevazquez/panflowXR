@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com https://www.unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://unpkg.com https://www.unpkg.com; media-src 'self' blob: https://*.supabase.co; connect-src 'self' blob: data: wss: https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com https://www.unpkg.com https://cdn.jsdelivr.net https://*.supabase.co; worker-src 'self' blob:; font-src 'self' data: https://fonts.gstatic.com;"
+  />
+  <title id="page-title">Panflow — Product</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0d1117; color: #f0f6f0; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    canvas { display: block; }
+
+    /* ── Layout ──────────────────────────────────────────────── */
+    #app { display: flex; height: 100vh; width: 100vw; }
+
+    /* ── 3D Preview (left) ───────────────────────────────────── */
+    #preview {
+      flex: 0 0 56%; position: relative; overflow: hidden;
+      background: radial-gradient(ellipse at center, #1a2840 0%, #0d1117 70%);
+    }
+    #preview canvas { position: absolute; inset: 0; }
+
+    #preview-loading {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      z-index: 2; pointer-events: none;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: .35em; text-transform: uppercase;
+      color: rgba(240,246,240,.4);
+      transition: opacity .6s;
+    }
+    #preview-loading.hidden { opacity: 0; }
+
+    .preview-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 120px; z-index: 1; pointer-events: none;
+      background: linear-gradient(to top, rgba(13,17,23,.9), transparent);
+    }
+
+    /* ── Details sidebar (right) ─────────────────────────────── */
+    #details {
+      flex: 1; display: flex; flex-direction: column; padding: 56px 48px 24px;
+      background: #0d1117; border-left: 1px solid rgba(240,246,240,.06);
+      overflow-y: auto;
+    }
+
+    .brand {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: .4em; text-transform: uppercase;
+      color: rgba(240,246,240,.3); margin-bottom: 8px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .brand .dot { width: 5px; height: 5px; border-radius: 50%; background: #4a7a5c; }
+
+    #product-name {
+      font-family: 'Inter', sans-serif; font-weight: 800;
+      font-size: clamp(32px, 5vw, 48px); line-height: 1.05;
+      letter-spacing: -.035em; margin: 0 0 16px; color: #ffffff;
+    }
+
+    .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; }
+    .badge {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: .15em; text-transform: uppercase;
+      padding: 6px 14px; border-radius: 999px; font-weight: 500;
+      background: rgba(74,122,92,.15); color: #7bca9d;
+      border: 1px solid rgba(74,122,92,.25);
+    }
+    .badge.muted { background: rgba(240,246,240,.04); color: rgba(240,246,240,.45); border-color: rgba(240,246,240,.08); }
+
+    .specs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+    .spec { display: flex; flex-direction: column; gap: 4px; }
+    .spec-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 9px;
+      letter-spacing: .2em; text-transform: uppercase;
+      color: rgba(240,246,240,.28);
+    }
+    .spec-value {
+      font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+      color: rgba(240,246,240,.8);
+    }
+
+    .divider { width: 100%; height: 1px; background: rgba(240,246,240,.06); margin-bottom: 28px; }
+
+    #product-description {
+      font-size: 14px; line-height: 1.7; color: rgba(240,246,240,.55);
+      margin: 0 0 auto; max-width: 400px;
+    }
+
+    .price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 28px; }
+    .price {
+      font-family: 'Inter', sans-serif; font-weight: 800;
+      font-size: 36px; letter-spacing: -.03em; color: #ffffff;
+    }
+    .price-suffix {
+      font-family: 'Inter', sans-serif; font-size: 14px;
+      color: rgba(240,246,240,.35);
+    }
+
+    .cta-group { display: flex; gap: 14px; flex-wrap: wrap; }
+    .cta-btn {
+      appearance: none; text-decoration: none; cursor: pointer;
+      flex: 1; min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+      font-family: 'JetBrains Mono', monospace; font-weight: 500;
+      font-size: 11px; letter-spacing: .22em; text-transform: uppercase;
+      padding: 18px 28px; border-radius: 999px;
+      border: 1px solid rgba(240,246,240,.14);
+      background: rgba(240,246,240,.04); color: rgba(240,246,240,.8);
+      transition: all .3s cubic-bezier(.2,.7,.2,1);
+    }
+    .cta-btn:hover {
+      background: rgba(240,246,240,.1); border-color: rgba(240,246,240,.35);
+      transform: translateY(-2px); color: #ffffff;
+    }
+    .cta-btn.primary {
+      background: rgba(74,122,92,.2); border-color: rgba(74,122,92,.35); color: #7bca9d;
+    }
+    .cta-btn.primary:hover {
+      background: rgba(74,122,92,.35); border-color: rgba(74,122,92,.55);
+      color: #ffffff;
+    }
+    .cta-btn .arrow {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 1px solid currentColor;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 10px; transition: transform .3s;
+    }
+    .cta-btn:hover .arrow { transform: translateX(3px); }
+
+    .back-link {
+      position: absolute; top: 28px; left: 32px; z-index: 3;
+      text-decoration: none;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: .28em; text-transform: uppercase;
+      color: rgba(240,246,240,.45);
+      display: flex; align-items: center; gap: 8px;
+      transition: color .3s;
+    }
+    .back-link:hover { color: rgba(240,246,240,.8); }
+    .back-link .arrow-left {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 1px solid rgba(240,246,240,.22);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 9px; transition: transform .3s, border-color .3s;
+    }
+    .back-link:hover .arrow-left { transform: translateX(-3px); border-color: rgba(240,246,240,.5); }
+
+    @media (max-width: 860px) {
+      #app { flex-direction: column; }
+      #preview { flex: 0 0 42%; }
+      #details { padding: 32px 28px 20px; }
+      .cta-btn { flex: none; width: 100%; }
+      .back-link { top: 16px; left: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ── 3D Preview ──────────────────────────────────────────── -->
+  <div id="preview">
+    <a class="back-link" href="./">
+      <span class="arrow-left">←</span>
+      <span>Panflow</span>
+    </a>
+    <div id="preview-loading"><span>Loading model…</span></div>
+    <div class="preview-overlay"></div>
+  </div>
+
+  <!-- ── Details sidebar ─────────────────────────────────────── -->
+  <div id="details">
+    <div class="brand"><span class="dot"></span><span>PANFLOW</span></div>
+    <h1 id="product-name">Handpan</h1>
+
+    <div class="badges" id="badges">
+      <span class="badge">Loading…</span>
+    </div>
+
+    <div class="specs">
+      <div class="spec"><span class="spec-label">Scale</span><span class="spec-value" id="spec-scale">—</span></div>
+      <div class="spec"><span class="spec-label">Zones</span><span class="spec-value" id="spec-zones">9</span></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <p id="product-description">
+      Each handpan is individually tuned, delivering rich, resonant tones across every zone.
+      Try the full interactive experience in AR or VR before you buy.
+    </p>
+
+    <div class="price-row">
+      <span class="price" id="price">—</span>
+      <span class="price-suffix">USD</span>
+    </div>
+
+    <div class="cta-group">
+      <a class="cta-btn primary" id="cta-ar" href="./">
+        <span>Try in AR</span>
+        <span class="arrow">→</span>
+      </a>
+      <a class="cta-btn" id="cta-vr" href="./">
+        <span>Try in VR</span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./src/product-landing.ts"></script>
+
+</body>
+</html>
