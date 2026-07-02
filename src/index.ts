@@ -11,8 +11,8 @@ import {
   Object3D,
 } from "@iwsdk/core";
 
-import { Handpan, HandpanSystem, handpanLockManager, setCustomAudioUrls } from "./handpan.js";
-import { fetchLatestInstrument } from "./instrument-loader.js";
+import { Handpan, HandpanSystem, handpanLockManager } from "./handpan.js";
+import { setupInstrumentPipeline } from "./setup/instrument-pipeline.js";
 // import { BubbleSystem }           from "./bubbles.js"; // DISABLED
 import { reverbManager }          from "./reverb.js";
 import { ambientManager }         from "./ambient.js";
@@ -63,7 +63,7 @@ const isVrMode = xrMode === "vr";
 localStorage.setItem("xr-mode", xrMode);
 
 // Fetch custom instrument in background — does not block world creation
-const instrumentPromise = fetchLatestInstrument();
+setupInstrumentPipeline();
 
 World.create(document.getElementById("scene-container") as HTMLDivElement, {
   assets,
@@ -137,13 +137,6 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   document.addEventListener("handpan-note", (e: Event) => {
     const { index } = (e as CustomEvent).detail;
     console.log(`Handpan zone ${index} triggered`);
-  });
-
-  // Apply custom audio URLs once instrument fetch resolves
-  instrumentPromise.then((instrument) => {
-    if (instrument?.audio_urls) {
-      setCustomAudioUrls(instrument.audio_urls);
-    }
   });
 
   // ── Systems ───────────────────────────────────────────────────────────────
