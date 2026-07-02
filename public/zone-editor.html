@@ -145,6 +145,7 @@
     }
     .zs-select:focus { border-color: #444; }
     .zs-select.assigned { border-color: #3a5a3a; color: #7ec87e; }
+    .zs-note { font-size: 10px; width: 56px; flex-shrink: 0; }
 
     /* Export */
     #export-code {
@@ -284,11 +285,17 @@ function getZoneColorHex(i) { return ZONE_COLORS_HEX[i % ZONE_COLORS_HEX.length]
 function getZoneColorThree(i) { return parseInt(getZoneColorHex(i).slice(1), 16); }
 function getDefaultRadius(i) { return i === 0 ? 0.18 : 0.15; }
 
+// Musical notes for the note selector (C3 → B5)
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const NOTE_OCTAVES = [3, 4, 5];
+const ALL_NOTES = NOTE_OCTAVES.flatMap(oct => NOTE_NAMES.map(n => `${n}${oct}`));
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let zoneCount = DEFAULT_ZONE_COUNT;
 let selectedMaterial = 'nitrided_steel';
 let zones = [];
 let zoneSounds = [];
+let zoneNotes = [];
 let loadedSoundFiles = [];
 let selectedZone = 0;
 let handpanGroup = null;
@@ -297,6 +304,7 @@ const zoneMeshes = [];
 const labelEls = [];
 const btnEls = [];
 const soundSelects = [];
+const noteSelects = [];
 
 const labelsContainer = document.getElementById('labels');
 const zoneGrid = document.getElementById('zone-grid');
@@ -402,6 +410,26 @@ function createSoundRow(i) {
   name.className = 'zs-name';
   name.textContent = getZoneName(i);
 
+  // Musical note selector
+  const noteSel = document.createElement('select');
+  noteSel.className = 'zs-select zs-note';
+  noteSel.dataset.zone = String(i);
+  const noneNote = document.createElement('option');
+  noneNote.value = '';
+  noneNote.textContent = '— —';
+  noteSel.appendChild(noneNote);
+  for (const note of ALL_NOTES) {
+    const opt = document.createElement('option');
+    opt.value = note;
+    opt.textContent = note;
+    noteSel.appendChild(opt);
+  }
+  noteSel.addEventListener('change', () => {
+    zoneNotes[i] = noteSel.value || null;
+    noteSel.classList.toggle('assigned', !!noteSel.value);
+    updateExport();
+  });
+
   const sel = document.createElement('select');
   sel.className = 'zs-select';
   sel.dataset.zone = String(i);
@@ -417,13 +445,15 @@ function createSoundRow(i) {
 
   row.appendChild(dot);
   row.appendChild(name);
+  row.appendChild(noteSel);
   row.appendChild(sel);
   zoneSoundList.appendChild(row);
-  return sel;
+  return { sound: sel, note: noteSel };
 }
 
 function rebuildZoneArrays(newCount) {
   const oldZones = zones;
+  const oldNotes = zoneNotes;
   const oldSounds = zoneSounds;
 
   zones = Array.from({ length: newCount }, (_, i) => {
@@ -431,6 +461,7 @@ function rebuildZoneArrays(newCount) {
     return { position: null, placed: false };
   });
   zoneSounds = Array.from({ length: newCount }, (_, i) => (i < oldSounds.length ? oldSounds[i] : null));
+  zoneNotes  = Array.from({ length: newCount }, (_, i) => (i < oldNotes.length ? oldNotes[i] : null));
 
   while (zoneMeshes.length > newCount) {
     const mesh = zoneMeshes.pop();
@@ -442,6 +473,7 @@ function rebuildZoneArrays(newCount) {
   zoneSoundList.innerHTML = '';
   btnEls.length = 0;
   soundSelects.length = 0;
+  noteSelects.length = 0;
 
   for (let i = 0; i < newCount; i++) {
     if (!zoneMeshes[i]) zoneMeshes.push(createZoneMesh(i));
@@ -454,8 +486,10 @@ function rebuildZoneArrays(newCount) {
     }
 
     const btn = createZoneButton(i);
+    const row = createSoundRow(i);
     btnEls.push(btn);
-    soundSelects.push(createSoundRow(i));
+    soundSelects.push(row.sound);
+    noteSelects.push(row.note);
 
     if (zones[i].placed && zones[i].position) {
       const disk = zoneMeshes[i];
@@ -470,6 +504,13 @@ function rebuildZoneArrays(newCount) {
   }
 
   rebuildSoundOptions();
+  // Restore note selector values after rebuild (select elements are recreated)
+  for (let i = 0; i < newCount; i++) {
+    if (zoneNotes[i] && noteSelects[i]) {
+      noteSelects[i].value = zoneNotes[i];
+      noteSelects[i].classList.toggle('assigned', true);
+    }
+  }
   if (selectedZone >= newCount) selectedZone = newCount - 1;
   selectZone(selectedZone);
   updateExport();
