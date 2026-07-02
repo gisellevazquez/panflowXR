@@ -147,6 +147,21 @@
     .zs-select.assigned { border-color: #3a5a3a; color: #7ec87e; }
     .zs-note { font-size: 10px; width: 56px; flex-shrink: 0; }
 
+    /* Tilt control */
+    .tilt-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+    .tilt-label { font-size: 11px; color: #666; flex-shrink: 0; }
+    .tilt-slider {
+      flex: 1; -webkit-appearance: none; appearance: none;
+      height: 4px; background: #222; border-radius: 2px; outline: none;
+    }
+    .tilt-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #4a7a5c; cursor: pointer;
+    }
+    .tilt-val { font-size: 11px; color: #999; width: 32px; text-align: right; flex-shrink: 0; }
+    .tilt-na { font-size: 10px; color: #444; margin-top: 6px; font-style: italic; }
+
     /* Export */
     #export-code {
       width: 100%; resize: none; background: #0a0a0a; border: 1px solid #222;
@@ -234,6 +249,22 @@
       <div id="coords">
         <span>x</span> — &nbsp; <span>y</span> — &nbsp; <span>z</span> —
       </div>
+      <div class="tilt-row" id="tilt-control">
+        <span class="tilt-label">X (°)</span>
+        <input type="range" class="tilt-slider" id="tilt-slider-x" min="-45" max="45" value="0" step="1">
+        <span class="tilt-val" id="tilt-value-x">0</span>
+      </div>
+      <div class="tilt-row" id="tilt-control-y">
+        <span class="tilt-label">Y (°)</span>
+        <input type="range" class="tilt-slider" id="tilt-slider-y" min="-45" max="45" value="0" step="1">
+        <span class="tilt-val" id="tilt-value-y">0</span>
+      </div>
+      <div class="tilt-row" id="tilt-control-z">
+        <span class="tilt-label">Z (°)</span>
+        <input type="range" class="tilt-slider" id="tilt-slider-z" min="-45" max="45" value="0" step="1">
+        <span class="tilt-val" id="tilt-value-z">0</span>
+      </div>
+      <div class="tilt-na" id="tilt-na" style="display:none">Sphere collider — tilt N/A</div>
     </div>
 
     <!-- Actions -->
@@ -296,6 +327,9 @@ let selectedMaterial = 'nitrided_steel';
 let zones = [];
 let zoneSounds = [];
 let zoneNotes = [];
+let zoneTiltX = [];    // degrees (-45..+45) — tilt around local X
+let zoneTiltY = [];    // degrees (-45..+45) — tilt around local Y
+let zoneTiltZ = [];    // degrees (-45..+45) — tilt around local Z
 let loadedSoundFiles = [];
 let selectedZone = 0;
 let handpanGroup = null;
@@ -455,6 +489,9 @@ function rebuildZoneArrays(newCount) {
   const oldZones = zones;
   const oldNotes = zoneNotes;
   const oldSounds = zoneSounds;
+  const oldTiltX = zoneTiltX;
+  const oldTiltY = zoneTiltY;
+  const oldTiltZ = zoneTiltZ;
 
   zones = Array.from({ length: newCount }, (_, i) => {
     if (i < oldZones.length) return { position: oldZones[i].position, placed: oldZones[i].placed };
@@ -462,6 +499,9 @@ function rebuildZoneArrays(newCount) {
   });
   zoneSounds = Array.from({ length: newCount }, (_, i) => (i < oldSounds.length ? oldSounds[i] : null));
   zoneNotes  = Array.from({ length: newCount }, (_, i) => (i < oldNotes.length ? oldNotes[i] : null));
+  zoneTiltX  = Array.from({ length: newCount }, (_, i) => (i < oldTiltX.length ? oldTiltX[i] : 0));
+  zoneTiltY  = Array.from({ length: newCount }, (_, i) => (i < oldTiltY.length ? oldTiltY[i] : 0));
+  zoneTiltZ  = Array.from({ length: newCount }, (_, i) => (i < oldTiltZ.length ? oldTiltZ[i] : 0));
 
   while (zoneMeshes.length > newCount) {
     const mesh = zoneMeshes.pop();
@@ -495,7 +535,7 @@ function rebuildZoneArrays(newCount) {
       const disk = zoneMeshes[i];
       disk.position.copy(zones[i].position);
       disk.position.y += 0.003;
-      disk.rotation.x = -Math.PI / 2;
+      applyZoneTilt(i);
       disk.visible = true;
       btn.classList.add('placed');
     } else {
@@ -724,9 +764,9 @@ function placeZone(i, point) {
   const disk = zoneMeshes[i];
   disk.position.copy(point);
   disk.position.y += 0.003;
-  disk.rotation.x  = -Math.PI / 2;
   disk.visible = true;
   disk.userData.ring.visible = (i === selectedZone);
+  applyZoneTilt(i);
   btnEls[i].classList.add('placed');
   updateInfoPanel();
   updateExport();
@@ -766,6 +806,24 @@ function updateInfoPanel() {
   } else {
     c.innerHTML = `<span>x</span> — &nbsp; <span>y</span> — &nbsp; <span>z</span> —`;
   }
+
+  // Tilt control — Ding (zone 0) uses sphere, no tilt
+  const isDing = selectedZone === 0;
+  document.getElementById('tilt-control').style.display = isDing ? 'none' : '';
+  document.getElementById('tilt-control-y').style.display = isDing ? 'none' : '';
+  document.getElementById('tilt-control-z').style.display = isDing ? 'none' : '';
+  document.getElementById('tilt-na').style.display = isDing ? '' : 'none';
+  if (!isDing) {
+    const x = zoneTiltX[selectedZone] ?? 0;
+    const y = zoneTiltY[selectedZone] ?? 0;
+    const z = zoneTiltZ[selectedZone] ?? 0;
+    document.getElementById('tilt-slider-x').value = String(x);
+    document.getElementById('tilt-value-x').textContent = String(x);
+    document.getElementById('tilt-slider-y').value = String(y);
+    document.getElementById('tilt-value-y').textContent = String(y);
+    document.getElementById('tilt-slider-z').value = String(z);
+    document.getElementById('tilt-value-z').textContent = String(z);
+  }
 }
 
 function buildZoneOffsets() {
@@ -778,6 +836,14 @@ function buildZoneOffsets() {
 
 function buildZoneRadii() {
   return zones.map((_, i) => getDefaultRadius(i));
+}
+
+function buildZoneTilts() {
+  const degToRad = d => parseFloat((d * Math.PI / 180).toFixed(4));
+  return zones.map((_, i) => {
+    if (i === 0) return [0, 0, 0];
+    return [degToRad(zoneTiltX[i] ?? 0), degToRad(zoneTiltY[i] ?? 0), degToRad(zoneTiltZ[i] ?? 0)];
+  });
 }
 
 function updateExport() {
@@ -809,11 +875,20 @@ function updateExport() {
   const hasSounds = zoneSounds.some(s => s !== null);
   const hasNotes  = zoneNotes.some(n => n !== null);
 
+  const tiltLines = zones.map((_, i) => {
+    const xRad = (zoneTiltX[i] ?? 0) * Math.PI / 180;
+    const yRad = (zoneTiltY[i] ?? 0) * Math.PI / 180;
+    const zRad = (zoneTiltZ[i] ?? 0) * Math.PI / 180;
+    const tag = i === 0 ? ' // 0 Ding — sphere' : ` // ${i}`;
+    return `  [${xRad.toFixed(4)}, ${yRad.toFixed(4)}, ${zRad.toFixed(4)}],${tag}`;
+  });
+
   const exportJson = {
     material: selectedMaterial,
     zone_count: zoneCount,
     zone_offsets: buildZoneOffsets(),
     zone_radii: buildZoneRadii(),
+    zone_tilts: buildZoneTilts(),
     zone_notes: zoneNotes,
     model_scale: 1.0,
   };
@@ -823,7 +898,12 @@ function updateExport() {
     `const ZONE_OFFSETS: [number, number, number][] = [\n` +
     posLines.join('\n') + '\n];\n\n' +
     `const ZONE_RADII: number[] = [\n` +
-    radiiLines.join('\n') + '\n];\n' +
+    radiiLines.join('\n') + '\n];\n\n' +
+    `// Zone tilt in radians — [tiltX, tiltY, tiltZ] around handpan local axes\n` +
+    `// Zone 0 (Ding) is always [0, 0, 0] — it uses a sphere collider\n` +
+    `const ZONE_TILTS: [number, number, number][] = [\n` +
+    tiltLines.join('\n') + '\n];\n\n' +
+    `const DING_ZONE_INDEX = 0;\n` +
     (hasSounds
       ? `\n// Zone → audio file mapping\n// Put these files in your project's audio folder\n` +
         `const ZONE_SOUNDS: (string | null)[] = [\n` +
@@ -847,6 +927,45 @@ function setStatus(msg) { document.getElementById('status').textContent = msg; }
 // ── Button handlers ───────────────────────────────────────────────────────────
 document.getElementById('btn-clear-zone').onclick = () => clearZone(selectedZone);
 document.getElementById('btn-clear-all').onclick  = () => clearAll();
+
+// Tilt sliders
+document.getElementById('tilt-slider-x').addEventListener('input', () => {
+  const deg = parseInt(document.getElementById('tilt-slider-x').value);
+  zoneTiltX[selectedZone] = deg;
+  document.getElementById('tilt-value-x').textContent = String(deg);
+  applyZoneTilt(selectedZone);
+  updateExport();
+});
+document.getElementById('tilt-slider-y').addEventListener('input', () => {
+  const deg = parseInt(document.getElementById('tilt-slider-y').value);
+  zoneTiltY[selectedZone] = deg;
+  document.getElementById('tilt-value-y').textContent = String(deg);
+  applyZoneTilt(selectedZone);
+  updateExport();
+});
+document.getElementById('tilt-slider-z').addEventListener('input', () => {
+  const deg = parseInt(document.getElementById('tilt-slider-z').value);
+  zoneTiltZ[selectedZone] = deg;
+  document.getElementById('tilt-value-z').textContent = String(deg);
+  applyZoneTilt(selectedZone);
+  updateExport();
+});
+
+// ── Tilt helper ────────────────────────────────────────────────────────────────
+function applyZoneTilt(i) {
+  const disk = zoneMeshes[i];
+  if (!disk) return;
+  const xDeg = zoneTiltX[i] ?? 0;
+  const yDeg = zoneTiltY[i] ?? 0;
+  const zDeg = zoneTiltZ[i] ?? 0;
+  const xRad = xDeg * Math.PI / 180;
+  const yRad = yDeg * Math.PI / 180;
+  const zRad = zDeg * Math.PI / 180;
+  disk.rotation.x = -Math.PI / 2 + xRad;
+  disk.rotation.y = yRad;
+  disk.rotation.z = zRad;
+  // ring inherits from disk (it's a child), so it tilts with the disk
+}
 
 document.getElementById('copy-btn').onclick = () => {
   const ta  = document.getElementById('export-code');
