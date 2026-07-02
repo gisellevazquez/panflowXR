@@ -7,6 +7,7 @@ import { MelodySystem }           from "../melody.js";
 import { TutorialSystem }         from "../tutorial-system.js";
 import { RecordingSystem }        from "../recording-system.js";
 import { LauncherSystem }         from "../launcher.js";
+import { MenuGestureSystem }      from "../menu-gesture.js";
 
 /** Register UX-facing systems (highlights, tutorial, menus, launcher). */
 export function registerUxSystems(world: World): void {
@@ -17,4 +18,5 @@ export function registerUxSystems(world: World): void {
   world.registerSystem(TutorialSystem);
   world.registerSystem(RecordingSystem);
   world.registerSystem(LauncherSystem);
+  world.registerSystem(MenuGestureSystem);
 }

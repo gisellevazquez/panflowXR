@@ -27,7 +27,9 @@ interface TutorialStep {
 
 const STEPS: TutorialStep[] = [
   { message: "Welcome. Take a breath and explore your handpan.", autoAdvanceSec: 6 },
+  { message: "Your handpan has 9 tone fields. The center 'Dong' is your anchor note — surrounding fields each play a different tone.", autoAdvanceSec: 8 },
   { message: "Touch the glowing tone fields with your fingertips.", autoAdvanceSec: 30 },
+  { message: "Settings gives you reverb presets, ambient sounds, and recording.", autoAdvanceSec: 5 },
   { message: "Open settings from the dock below, or hold left pinch.", autoAdvanceSec: 25 },
   { message: "Grab and move the handpan to find your perfect position.", autoAdvanceSec: 25 },
   { message: "You're ready — explore freely.", autoAdvanceSec: 4 },
@@ -54,7 +56,7 @@ export class TutorialSystem extends createSystem({
   // Step 2 — touch zones 0 then 4
   private touchPhase = 0;
 
-  // Step 4 — detect handpan movement
+  // Step 5 — detect handpan movement
   private readonly grabRefPos = new Vector3();
   private readonly grabCheckPos = new Vector3();
   private grabTracking = false;
@@ -79,8 +81,8 @@ export class TutorialSystem extends createSystem({
       target:         this.player.head,
       offsetPosition: [0, -0.12, -0.42] as [number, number, number],
       behavior:       FollowBehavior.PivotY,
-      speed:          10,
-      tolerance:      0.04,
+      speed:          3,
+      tolerance:      0.15,
     });
 
     this.cleanupFuncs.push(
@@ -102,7 +104,7 @@ export class TutorialSystem extends createSystem({
     }
 
     const onNote = (e: Event) => {
-      if (!tutorialManager.active || this.stepIndex !== 1) return;
+      if (!tutorialManager.active || this.stepIndex !== 2) return;
       const zone = (e as CustomEvent<{ index: number }>).detail.index;
       if (this.touchPhase === 0 && zone === 0) {
         zoneHighlightManager.highlightZone(0, "success");
@@ -116,7 +118,7 @@ export class TutorialSystem extends createSystem({
     };
 
     const onSettingsOpen = () => {
-      if (!tutorialManager.active || this.stepIndex !== 2) return;
+      if (!tutorialManager.active || this.stepIndex !== 4) return;
       this._advance();
     };
 
@@ -126,7 +128,6 @@ export class TutorialSystem extends createSystem({
     };
 
     const onXrStarted = () => {
-      if (localStorage.getItem(TUTORIAL_DONE_KEY) === "1") return;
       this._start();
     };
 
@@ -153,8 +154,8 @@ export class TutorialSystem extends createSystem({
       return;
     }
 
-    // Step 4 — advance when handpan moves enough
-    if (this.stepIndex === 3 && this.grabTracking) {
+    // Step 5 — advance when handpan moves enough
+    if (this.stepIndex === 5 && this.grabTracking) {
       for (const e of this.queries.handpans.entities) {
         e.object3D!.getWorldPosition(this.grabCheckPos);
         if (this.grabRefPos.distanceTo(this.grabCheckPos) >= GRAB_MOVE_THRESHOLD) {
@@ -202,6 +203,8 @@ export class TutorialSystem extends createSystem({
   private _start(): void {
     if (tutorialManager.active) return;
 
+    window.dispatchEvent(new Event("panflow-tutorial-started"));
+
     tutorialManager.active = true;
     this.stepIndex = 0;
     this.stepTimer = 0;
@@ -243,18 +246,34 @@ export class TutorialSystem extends createSystem({
 
       case 1:
         ambientManager.setVolume(this.savedAmbientVolume);
-        this.touchPhase = 0;
+        zoneHighlightManager.highlightAll(true);
         zoneHighlightManager.pulseZone(0, 0);
         zoneHighlightManager.highlightZone(0, "tutorial");
         break;
 
       case 2:
+        this.touchPhase = 0;
+        zoneHighlightManager.pulseZone(0, 0);
+        zoneHighlightManager.highlightZone(0, "tutorial");
+        break;
+
+      case 3:
+        zoneHighlightManager.highlightAll(false);
+        break;
+
+      case 4:
+        window.dispatchEvent(new CustomEvent("panflow-tutorial-show-launcher", {
+          detail: { show: true },
+        }));
         window.dispatchEvent(new CustomEvent("panflow-tutorial-highlight-launcher", {
           detail: { active: true },
         }));
         break;
 
-      case 3:
+      case 5:
+        window.dispatchEvent(new CustomEvent("panflow-tutorial-show-launcher", {
+          detail: { show: false },
+        }));
         for (const e of this.queries.handpans.entities) {
           e.object3D!.getWorldPosition(this.grabRefPos);
           break;
@@ -265,7 +284,7 @@ export class TutorialSystem extends createSystem({
         zoneHighlightManager.highlightZone(0, "tutorial");
         break;
 
-      case 4:
+      case 6:
         zoneHighlightManager.highlightAll(false);
         break;
     }
